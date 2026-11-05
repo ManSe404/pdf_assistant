@@ -1,0 +1,68 @@
+[project]
+name = "pdf-assistant"
+version = "2.0.0"
+description = "Chat with a PDF: upload, index, ask; models via Claude, OpenAI, Microsoft Foundry or Ollama."
+requires-python = ">=3.14"
+authors = [{ name = "Stefan" }]
+dependencies = [
+    "fastapi>=0.162,<0.163",
+    "uvicorn[standard]>=0.54,<0.55",
+    "pydantic-settings>=2.16,<3",
+    "python-multipart>=0.0.33,<0.1",
+    # Database (SQLite by default; any SQLAlchemy URL works)
+    "sqlalchemy>=2.1,<2.2",
+    "alembic>=1.20,<2",
+    # Auth: bcrypt hashes, a signed JWT in an httpOnly cookie
+    "bcrypt>=5,<6",
+    "pyjwt>=2.15,<3",
+    # Models: OpenAI, Azure OpenAI / Foundry and Ollama speak the OpenAI API; Claude
+    # (Anthropic or Foundry) goes through the Anthropic SDK. See pdf_assistant/ai.
+    "openai>=3.46,<4",
+    "anthropic>=2.5,<3",
+    # Vector stores: Qdrant (embedded on disk or a server) or Pinecone
+    "qdrant-client>=1.20,<2",
+    "pinecone>=10.3,<11",
+    # PDF text
+    "pypdfium2>=5.14,<6",
+    # Tracing (optional at runtime: off without keys)
+    "langfuse>=5.1,<6",
+    "storage3>=2.31,<3",
+    "psycopg[binary]>=3.3,<4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2,<10",
+    # FastAPI's TestClient and the OpenAI SDK mock transport in tests
+    "httpx>=0.28,<1",
+    "ruff>=0.17,<0.18",
+    "mypy>=1.20",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdf_assistant"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "BLE"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["pypdfium2", "pypdfium2.*"]
+ignore_missing_imports = true

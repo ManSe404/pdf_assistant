@@ -1,0 +1,55 @@
+# docker compose up --build  ->  http://localhost:8000
+# Keys and settings come from .env next to this file (see the README); unset ones fall
+# back to the defaults in backend/src/pdf_assistant/settings.py.
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # OLLAMA_URL=http://host.docker.internal:11434
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-dev}
+      SECRET_KEY: ${SECRET_KEY:-}
+      ALLOW_SIGNUP: ${ALLOW_SIGNUP:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      PDF_STORAGE: ${PDF_STORAGE:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      SUPABASE_BUCKET: ${SUPABASE_BUCKET:-}
+      CHAT_PROVIDER: ${CHAT_PROVIDER:-}
+      CHAT_MODELS: ${CHAT_MODELS:-}
+      CLAUDE_EFFORT: ${CLAUDE_EFFORT:-}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
+      EMBED_DOCUMENT_PREFIX: ${EMBED_DOCUMENT_PREFIX:-}
+      EMBED_QUERY_PREFIX: ${EMBED_QUERY_PREFIX:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_FOUNDRY_RESOURCE: ${ANTHROPIC_FOUNDRY_RESOURCE:-}
+      ANTHROPIC_FOUNDRY_API_KEY: ${ANTHROPIC_FOUNDRY_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      RETRIEVER_TOP_K: ${RETRIEVER_TOP_K:-}
+      MEMORY_TURNS: ${MEMORY_TURNS:-}
+      EXPERIMENTS: ${EXPERIMENTS:-}
+      VECTOR_STORE: ${VECTOR_STORE:-}
+      QDRANT_URL: ${QDRANT_URL:-}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-}
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+      PINECONE_INDEX: ${PINECONE_INDEX:-}
+      PINECONE_HOST: ${PINECONE_HOST:-}
+      PINECONE_CLOUD: ${PINECONE_CLOUD:-}
+      PINECONE_REGION: ${PINECONE_REGION:-}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-}
+
+volumes:
+  data:

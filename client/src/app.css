@@ -1,13 +1,148 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
-pre {
-  background-color: #626262;
-  color: #f7fafc;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  line-height: 18px;
-  font-size: 14px;
-  margin: 3px 0;
+@layer base {
+	/* Tailwind 4 gives buttons the default cursor. */
+	button:not(:disabled),
+	[role='button']:not(:disabled) {
+		cursor: pointer;
+	}
+
+	/* One visible focus style for every interactive element. */
+	:focus-visible {
+		outline: 2px solid var(--color-blue-600);
+		outline-offset: 2px;
+	}
+}
+
+@layer components {
+	/* Citation buttons in rendered answers, see lib/markdown/answer.ts. */
+	.answer button[data-cite] {
+		display: inline-block;
+		margin: 0 0.125rem;
+		padding: 0 0.25rem;
+		border-radius: 0.25rem;
+		background: var(--color-blue-50);
+		color: var(--color-blue-700);
+		font-size: 0.75em;
+		font-weight: 600;
+		line-height: 1.4;
+		vertical-align: 0.15em;
+	}
+
+	.answer button[data-cite]:hover {
+		background: var(--color-blue-100);
+	}
+}
+
+/*
+ * PDF page and text layer. Adapted from pdfjs-dist/web/pdf_viewer.css
+ * (Mozilla, Apache-2.0); only what a page with a selectable text layer needs.
+ */
+.pdf-page {
+	--user-unit: 1;
+	--total-scale-factor: calc(var(--scale-factor) * var(--user-unit));
+	--scale-round-x: 1px;
+	--scale-round-y: 1px;
+}
+
+.pdf-page.flash {
+	animation: page-flash 1.8s ease-out;
+}
+
+@keyframes page-flash {
+	0%,
+	40% {
+		box-shadow: 0 0 0 4px var(--color-amber-400);
+	}
+	100% {
+		box-shadow: 0 0 0 4px transparent;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pdf-page.flash {
+		animation: none;
+		box-shadow: 0 0 0 4px var(--color-amber-400);
+	}
+}
+
+.textLayer {
+	--min-font-size: 1;
+	--text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+	--min-font-size-inv: calc(1 / var(--min-font-size));
+	position: absolute;
+	inset: 0;
+	overflow: clip;
+	opacity: 1;
+	line-height: 1;
+	text-align: initial;
+	letter-spacing: normal;
+	word-spacing: normal;
+	text-size-adjust: none;
+	forced-color-adjust: none;
+	transform-origin: 0 0;
+	caret-color: CanvasText;
+	z-index: 0;
+}
+
+.textLayer :is(span, br) {
+	color: transparent;
+	position: absolute;
+	white-space: pre;
+	cursor: text;
+	transform-origin: 0% 0%;
+}
+
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+	--font-height: 0;
+	--scale-x: 1;
+	--rotate: 0deg;
+	z-index: 1;
+	font-size: calc(var(--text-scale-factor) * var(--font-height));
+	transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.textLayer .markedContent {
+	display: contents;
+}
+
+.textLayer span[role='img'] {
+	user-select: none;
+	cursor: default;
+}
+
+.textLayer ::selection {
+	background: rgb(0 0 255 / 0.25);
+	color: transparent;
+}
+
+.textLayer br::selection {
+	background: transparent;
+}
+
+.textLayer .endOfContent {
+	display: block;
+	position: absolute;
+	inset: 100% 0 0;
+	z-index: 0;
+	cursor: default;
+	user-select: none;
+}
+
+.textLayer.selecting .endOfContent {
+	top: 0;
+}
+
+.textLayer[data-main-rotation='90'] {
+	transform: rotate(90deg) translateY(-100%);
+}
+
+.textLayer[data-main-rotation='180'] {
+	transform: rotate(180deg) translate(-100%, -100%);
+}
+
+.textLayer[data-main-rotation='270'] {
+	transform: rotate(270deg) translateX(-100%);
 }
