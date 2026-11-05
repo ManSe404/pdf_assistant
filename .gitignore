@@ -1,5 +1,25 @@
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local data: SQLite, uploaded PDFs, embedded Qdrant
+backend/data/
+
+# Secrets
 .env
-.venv
-instance
+.env.*
+!.env.example
+
+# Client
+node_modules/
+client/build/
+client/.svelte-kit/
+
+# Editors and OS
+.idea/
+.vscode/
 .DS_Store
