@@ -1,0 +1,1056 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF asistent · demo</title>
+<meta name="description" content="Interaktivni demo PDF asistenta: razgovor sa PDF-om, odgovori sa stranama, eksperiment sa modelima i ocenama. Radi u browseru, bez servera i ključeva, nad izmišljenim dokumentima.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='1.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z'/%3E%3C/svg%3E">
+<style>
+/* Colors from the client's Tailwind palette, so the demo looks like the app. */
+:root {
+  --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-300: #d1d5db;
+  --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563; --gray-700: #374151;
+  --gray-800: #1f2937; --gray-900: #111827;
+  --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-200: #bfdbfe; --blue-600: #2563eb; --blue-700: #1d4ed8;
+  --amber-50: #fffbeb; --amber-200: #fde68a; --amber-400: #fbbf24; --amber-800: #92400e; --amber-900: #78350f;
+  --green-50: #f0fdf4; --green-200: #bbf7d0; --green-600: #16a34a; --green-800: #166534;
+  --red-50: #fef2f2; --red-100: #fee2e2; --red-200: #fecaca; --red-700: #b91c1c; --red-800: #991b1b;
+  --violet-50: #f5f3ff; --violet-200: #ddd6fe; --violet-700: #6d28d9;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px; line-height: 1.5; color: var(--gray-900); background: var(--gray-50);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+button:disabled { cursor: default; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+svg.i { width: 1rem; height: 1rem; flex-shrink: 0; }
+svg.i6 { width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
+.muted { color: var(--gray-500); }
+.small { font-size: .875rem; } .xs { font-size: .75rem; }
+
+/* ---------------------------------------------------------------- demo banner */
+.banner {
+  display: flex; align-items: center; gap: .75rem; padding: .45rem 1rem; font-size: .8125rem;
+  background: var(--violet-50); color: var(--gray-700); border-bottom: 1px solid var(--violet-200);
+}
+.banner strong { color: var(--violet-700); }
+.banner .spacer { flex: 1; }
+.banner a { color: var(--violet-700); white-space: nowrap; }
+.banner a:hover { text-decoration: underline; }
+.hood-btn {
+  display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .6rem; border-radius: .375rem;
+  border: 1px solid var(--violet-200); background: white; color: var(--violet-700); font-weight: 600; white-space: nowrap;
+}
+.hood-btn[aria-pressed="true"] { background: var(--violet-700); color: white; border-color: var(--violet-700); }
+
+/* ---------------------------------------------------------------- navbar */
+.nav { position: sticky; top: 0; z-index: 40; height: 3.5rem; border-bottom: 1px solid var(--gray-200); background: white; }
+.nav-inner { max-width: 80rem; margin: 0 auto; height: 100%; display: flex; align-items: center; gap: .5rem; padding: 0 1rem; }
+.brand { margin-right: auto; display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+.brand svg { color: var(--blue-600); }
+.nav-links { display: flex; align-items: center; gap: .25rem; font-size: .875rem; }
+.nav-link { display: inline-flex; align-items: center; gap: .375rem; border-radius: .375rem; padding: .375rem .5rem; color: var(--gray-600); }
+.nav-link:hover { background: var(--gray-100); color: var(--gray-900); }
+.nav-link[aria-current="page"] { background: var(--blue-50); color: var(--blue-700); }
+.nav-email { margin-left: .5rem; max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--gray-500); }
+
+/* ---------------------------------------------------------------- shared */
+.page { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1rem; }
+h1 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin: 0; }
+.lead { margin: .25rem 0 0; font-size: .875rem; color: var(--gray-600); max-width: 48rem; }
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .375rem;
+  background: var(--blue-600); color: white; padding: .5rem .75rem; font-size: .875rem; font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) { background: var(--blue-700); }
+.btn-primary:disabled { opacity: .6; }
+.btn {
+  display: inline-flex; align-items: center; gap: .25rem; border-radius: .375rem; border: 1px solid var(--gray-300);
+  background: white; padding: .375rem .5rem; font-size: .875rem; font-weight: 500; white-space: nowrap;
+}
+.btn:hover:not(:disabled) { background: var(--gray-50); }
+.btn:disabled { opacity: .5; }
+.danger-btn { border-radius: .375rem; padding: .375rem .5rem; font-size: .875rem; color: var(--gray-600); display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
+.danger-btn:hover { background: var(--red-50); color: var(--red-700); }
+.danger-btn.armed { background: var(--red-700); color: white; }
+.card { border: 1px solid var(--gray-200); border-radius: .75rem; background: white; }
+.badge { display: inline-flex; align-items: center; gap: .375rem; border-radius: 9999px; padding: .125rem .5rem; font-size: .75rem; font-weight: 500; white-space: nowrap; box-shadow: inset 0 0 0 1px var(--ring); }
+.badge.processing { background: var(--amber-50); color: var(--amber-800); --ring: var(--amber-200); }
+.badge.ready { background: var(--green-50); color: var(--green-800); --ring: var(--green-200); }
+.badge.failed { background: var(--red-50); color: var(--red-800); --ring: var(--red-200); }
+.spin { width: .625rem; height: .625rem; border-radius: 9999px; border: 2px solid currentColor; border-top-color: transparent; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.alert { display: flex; gap: .5rem; border-radius: .5rem; border: 1px solid var(--red-200); background: var(--red-50); color: var(--red-800); padding: .5rem .75rem; font-size: .875rem; }
+
+/* ---------------------------------------------------------------- documents */
+.doc-list { margin: 1rem 0 0; padding: 0; list-style: none; border: 1px solid var(--gray-200); border-radius: .75rem; background: white; overflow: hidden; }
+.doc-list li { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; padding: .75rem 1rem; }
+.doc-list li + li { border-top: 1px solid var(--gray-200); }
+.doc-list .name { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-list .name:hover { color: var(--blue-700); text-decoration: underline; }
+.doc-list .grow { flex: 1; min-width: 0; }
+.doc-list .err { margin: .25rem 0 0; font-size: .875rem; color: var(--red-700); }
+.doc-icon { color: var(--gray-400); }
+@media (max-width: 640px) { .doc-list .grow { flex-basis: 100%; } .doc-icon { display: none; } }
+
+/* ---------------------------------------------------------------- upload */
+.upload { max-width: 32rem; margin: 0 auto; padding: 2rem 1rem; }
+.upload form { margin-top: 1.5rem; display: grid; gap: 1rem; padding: 1.5rem; }
+.sample { display: flex; align-items: center; gap: .75rem; border: 1px solid var(--gray-300); border-radius: .5rem; padding: .6rem .75rem; }
+.sample:has(input:checked) { border-color: var(--blue-600); background: var(--blue-50); }
+.sample input { accent-color: var(--blue-600); }
+.progress { height: .5rem; border-radius: 9999px; background: var(--gray-200); overflow: hidden; }
+.progress > div { height: 100%; background: var(--blue-600); transition: width .15s; }
+
+/* ---------------------------------------------------------------- document page */
+.docpage { display: flex; flex-direction: column; height: calc(100dvh - 3.5rem - var(--banner-h, 0px)); }
+.status-strip { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .5rem 1rem; font-size: .875rem; border-bottom: 1px solid var(--amber-200); background: var(--amber-50); color: var(--amber-900); }
+.status-strip.failed { border-color: var(--red-200); background: var(--red-50); color: var(--red-800); }
+.tabs { display: none; border-bottom: 1px solid var(--gray-200); background: white; }
+.tabs button { flex: 1; padding: .5rem 1rem; font-size: .875rem; font-weight: 500; border-bottom: 2px solid transparent; color: var(--gray-600); }
+.tabs button[aria-selected="true"] { border-color: var(--blue-600); color: var(--blue-700); }
+.split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(22rem, 2fr) minmax(0, 3fr); }
+.split > div { min-height: 0; min-width: 0; }
+.chat-col { border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; background: white; }
+@media (max-width: 1023px) {
+  .tabs { display: flex; }
+  .split { grid-template-columns: 1fr; }
+  .split > div[data-hidden="true"] { display: none; }
+  .chat-col { border-right: 0; }
+}
+.convbar { border-bottom: 1px solid var(--gray-200); padding: .5rem .75rem; }
+.convbar .row { display: flex; align-items: center; gap: .5rem; }
+.convbar select { min-width: 0; flex: 1; border: 1px solid var(--gray-300); border-radius: .375rem; background: white; padding: .375rem .5rem; font-size: .875rem; }
+.convbar .components { margin: .25rem 0 0; font-size: .75rem; color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.messages { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem .75rem; display: flex; flex-direction: column; gap: 1rem; }
+.empty-chat { max-width: 24rem; margin: 0 auto; padding: 2rem 0 0; text-align: center; font-size: .875rem; color: var(--gray-600); }
+.empty-chat p { margin: .25rem 0; }
+.suggest { display: flex; flex-wrap: wrap; justify-content: center; gap: .375rem; margin-top: 1rem; }
+.chip { border: 1px dashed var(--violet-200); color: var(--violet-700); background: var(--violet-50); border-radius: 9999px; padding: .2rem .65rem; font-size: .8125rem; }
+.chip:hover { border-style: solid; }
+.chip:disabled { opacity: .5; }
+.user-msg { align-self: flex-end; max-width: 85%; border-radius: .5rem; border-top-right-radius: .125rem; background: var(--blue-600); color: white; padding: .5rem .75rem; font-size: .875rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.answer-wrap { align-self: flex-start; max-width: 95%; }
+.answer { border: 1px solid var(--gray-200); border-radius: .5rem; border-top-left-radius: .125rem; background: white; padding: .5rem .75rem; box-shadow: 0 1px 2px rgb(0 0 0 / .04); font-size: .875rem; line-height: 1.7; color: var(--gray-700); }
+.answer p { margin: 0; } .answer p + p { margin-top: .5rem; }
+.answer button[data-cite] { display: inline-block; margin: 0 .125rem; padding: 0 .25rem; border-radius: .25rem; background: var(--blue-50); color: var(--blue-700); font-size: .75em; font-weight: 600; line-height: 1.4; vertical-align: .15em; }
+.answer button[data-cite]:hover { background: var(--blue-100); }
+.answer .error { margin: .5rem 0 0; border-top: 1px solid var(--red-100); padding-top: .5rem; color: var(--red-700); }
+.caret { display: inline-block; width: .45rem; height: 1em; vertical-align: -.15em; background: var(--gray-400); animation: blink 1s steps(2) infinite; margin-left: 1px; }
+@keyframes blink { 50% { opacity: 0; } }
+.dots { display: inline-flex; gap: .25rem; padding: .25rem 0; }
+.dots span { width: .375rem; height: .375rem; border-radius: 9999px; background: var(--gray-400); animation: bounce 1s infinite; }
+.dots span:nth-child(2) { animation-delay: .15s; } .dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.sources { margin-top: .5rem; font-size: .75rem; display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
+.src-chip { border-radius: .25rem; background: var(--gray-100); color: var(--gray-700); padding: .125rem .375rem; }
+.src-chip:hover { background: var(--blue-50); color: var(--blue-700); }
+.linkish { color: var(--blue-700); padding: 0 .25rem; }
+.linkish:hover { text-decoration: underline; }
+.passages { margin: .5rem 0 0; padding: 0; list-style: none; display: grid; gap: .5rem; font-size: .75rem; }
+.passages li { border: 1px solid var(--gray-200); background: var(--gray-50); border-radius: .375rem; padding: .5rem; }
+.passages p { margin: .25rem 0 0; color: var(--gray-700); white-space: pre-line; }
+.votes { margin-top: .25rem; display: flex; gap: .25rem; }
+.vote { border-radius: .375rem; padding: .25rem; color: var(--gray-400); display: inline-flex; }
+.vote:hover { background: var(--gray-100); color: var(--gray-700); }
+.vote[aria-pressed="true"] { color: var(--blue-700); }
+.ask { border-top: 1px solid var(--gray-200); background: white; padding: .75rem; }
+.ask .row { display: flex; align-items: flex-end; gap: .5rem; }
+.ask textarea { flex: 1; min-height: 2.5rem; max-height: 10rem; resize: none; border: 1px solid var(--gray-300); border-radius: .375rem; padding: .5rem .75rem; font-size: .875rem; }
+.ask textarea:disabled { background: var(--gray-50); color: var(--gray-500); }
+.send { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: .375rem; background: var(--blue-600); color: white; flex-shrink: 0; }
+.send:hover:not(:disabled) { background: var(--blue-700); }
+.send:disabled { opacity: .5; }
+.ask .hint { margin: .25rem 0 0; font-size: .75rem; color: var(--gray-500); }
+
+/* PDF viewer: pages drawn as HTML instead of canvases */
+.viewer { height: 100%; display: flex; flex-direction: column; background: var(--gray-100); }
+.viewer-bar { display: flex; justify-content: space-between; gap: 1rem; padding: .5rem .75rem; border-bottom: 1px solid var(--gray-200); background: white; font-size: .875rem; }
+.viewer-bar .counter { color: var(--gray-500); white-space: nowrap; }
+.pages { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.pdf-page {
+  width: min(100%, 46rem); aspect-ratio: 1 / 1.414; background: white; box-shadow: 0 1px 3px rgb(0 0 0 / .12);
+  padding: 8% 10%; font-family: "Times New Roman", Times, Georgia, serif; color: #111; font-size: clamp(.7rem, 1.45vw, 1.05rem);
+  line-height: 1.45; overflow: hidden; scroll-margin: 1rem; flex-shrink: 0;
+}
+.pdf-page h2 { font-size: 1.45em; margin: 0 0 .9em; font-weight: 700; }
+.pdf-page h3 { font-size: 1.15em; margin: 0 0 .7em; font-weight: 700; }
+.pdf-page p { margin: 0 0 .75em; }
+.pdf-page .foot { margin-top: 2em; font-size: .75em; color: #666; text-align: center; }
+.pdf-page.flash { animation: page-flash 1.8s ease-out; }
+@keyframes page-flash { 0%, 40% { box-shadow: 0 0 0 4px var(--amber-400); } 100% { box-shadow: 0 0 0 4px transparent; } }
+.pdf-page.scan { background: #ece7dc; display: grid; place-items: center; color: #8a8170; font-family: inherit; font-style: italic; }
+
+/* ---------------------------------------------------------------- scores */
+.score-grid { margin-top: 1.5rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); }
+.score-card { padding: 1rem; }
+.score-card h2 { font-size: 1rem; font-weight: 600; margin: 0 0 .75rem; }
+.bars { display: grid; gap: .4rem; margin-bottom: 1rem; }
+.bar-row { display: grid; grid-template-columns: 9.5rem 1fr 2.75rem; align-items: center; gap: .5rem; font-size: .75rem; color: var(--gray-600); }
+.bar-row .lbl { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 1.25rem; background: repeating-linear-gradient(to right, transparent 0 calc(25% - 1px), var(--gray-200) calc(25% - 1px) 25%); border-left: 1px solid var(--gray-300); }
+.bar-fill { height: 100%; background: var(--blue-600); border-radius: 0 .2rem .2rem 0; transition: width .4s; }
+.bar-row.inactive { opacity: .45; }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+th { text-align: left; font-size: .75rem; font-weight: 500; color: var(--gray-500); padding: .25rem 0; border-bottom: 1px solid var(--gray-200); }
+td { padding: .45rem 0; border-bottom: 1px solid var(--gray-100); }
+th.num, td.num { text-align: right; padding-left: .75rem; }
+tr.inactive td { color: var(--gray-400); }
+tr.flash td { animation: row-flash 1.6s ease-out; }
+@keyframes row-flash { 0%, 30% { background: var(--blue-50); } 100% { background: transparent; } }
+
+/* ---------------------------------------------------------------- auth */
+.auth { max-width: 24rem; margin: 0 auto; padding: 3rem 1rem; }
+.auth form { margin-top: 1.5rem; display: grid; gap: 1rem; padding: 1.5rem; }
+.field { display: grid; gap: .375rem; font-size: .875rem; }
+.field label { font-weight: 500; }
+.field input { border: 1px solid var(--gray-300); border-radius: .375rem; padding: .5rem .75rem; background: white; }
+
+/* ---------------------------------------------------------------- "under the hood" drawer */
+.hood {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(100%, 27rem); z-index: 60; background: white;
+  border-left: 1px solid var(--violet-200); box-shadow: -8px 0 24px rgb(0 0 0 / .08); display: flex; flex-direction: column;
+}
+.hood[hidden] { display: none; }
+.hood header { display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-bottom: 1px solid var(--gray-200); }
+.hood header h2 { margin: 0; font-size: 1rem; flex: 1; color: var(--violet-700); }
+.hood .htabs { display: flex; border-bottom: 1px solid var(--gray-200); }
+.hood .htabs button { flex: 1; padding: .5rem; font-size: .875rem; font-weight: 500; color: var(--gray-600); border-bottom: 2px solid transparent; }
+.hood .htabs button[aria-selected="true"] { color: var(--violet-700); border-color: var(--violet-700); }
+.hood .body { flex: 1; overflow-y: auto; padding: .75rem 1rem 2rem; font-size: .8125rem; }
+.hood .intro { color: var(--gray-600); margin: 0 0 .75rem; }
+.event { border: 1px solid var(--gray-200); border-radius: .5rem; padding: .6rem .75rem; margin-bottom: .6rem; }
+.event h3 { margin: 0 0 .35rem; font-size: .8125rem; display: flex; gap: .4rem; align-items: baseline; }
+.event h3 .when { margin-left: auto; font-weight: 400; color: var(--gray-400); font-size: .75rem; }
+.event ol { margin: 0; padding-left: 1.1rem; display: grid; gap: .25rem; }
+.event code, .env code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .75rem; background: var(--gray-100); border-radius: .25rem; padding: 0 .25rem; }
+.step-pending { color: var(--gray-400); }
+.step-done::marker { color: var(--green-600); }
+.hits { margin: .25rem 0 0; padding: 0; list-style: none; display: grid; gap: .2rem; }
+.hits li { display: grid; grid-template-columns: 3.2rem 2.8rem 1fr; gap: .4rem; font-size: .75rem; color: var(--gray-600); }
+.hits li.cited { color: var(--gray-900); font-weight: 500; }
+.hits .snip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prob { display: grid; grid-template-columns: 8.5rem 1fr 2.6rem; gap: .4rem; align-items: center; font-size: .75rem; margin: .15rem 0; }
+.prob .track { height: .55rem; background: var(--gray-100); border-radius: 9999px; overflow: hidden; }
+.prob .fill { height: 100%; background: var(--violet-200); }
+.prob.picked { font-weight: 600; }
+.prob.picked .fill { background: var(--violet-700); }
+.kind { margin: .4rem 0 .1rem; font-size: .75rem; color: var(--gray-500); }
+.setting { display: grid; gap: .3rem; margin-bottom: .9rem; }
+.setting label, .setting .lbl { font-weight: 600; font-size: .8125rem; }
+.setting select { border: 1px solid var(--gray-300); border-radius: .375rem; padding: .35rem .5rem; font-size: .8125rem; background: white; }
+.setting .help { color: var(--gray-500); font-size: .75rem; margin: 0; }
+.setting label.check { display: flex; gap: .5rem; align-items: flex-start; font-size: .8125rem; font-weight: 400; }
+.check input { margin-top: .2rem; accent-color: var(--violet-700); }
+.env { margin: .5rem 0 0; padding: .6rem .75rem; background: var(--gray-900); color: #e5e7eb; border-radius: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .72rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.env .c { color: #9ca3af; }
+@media (min-width: 1500px) { body.hood-open .app { margin-right: 27rem; } }
+@media (max-width: 640px) {
+  .banner { flex-wrap: wrap; }
+  .banner .spacer { display: none; }
+  .banner .long { display: none; }
+  .nav-link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  .brand span, .nav-email { display: none; }
+  .bar-row { grid-template-columns: 6.5rem 1fr 2.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+  .pdf-page.flash { box-shadow: 0 0 0 4px var(--amber-400); }
+}
+</style>
+</head>
+<body>
+<div class="banner" id="banner" role="note">
+  <strong>Demo</strong>
+  <span class="long">Radi u browseru, bez servera i ključeva. Dokumenti, modeli i ocene su izmišljeni, a odgovori unapred napisani.</span>
+  <span class="spacer"></span>
+  <button type="button" class="hood-btn" id="hood-toggle" aria-pressed="false" aria-controls="hood">
+    <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008Z"/></svg>
+    Ispod haube
+  </button>
+  <a href="https://github.com/ManSe404/pdf_assistant">Kod na GitHubu</a>
+</div>
+<div class="app">
+  <header class="nav"><div class="nav-inner" id="nav"></div></header>
+  <main id="view"></main>
+</div>
+<aside class="hood" id="hood" aria-label="Ispod haube" hidden>
+  <header>
+    <h2>Ispod haube</h2>
+    <button type="button" class="btn" id="hood-close" aria-label="Zatvori panel">
+      <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+    </button>
+  </header>
+  <div class="htabs" role="tablist" aria-label="Ispod haube">
+    <button type="button" role="tab" id="htab-flow" aria-selected="true" aria-controls="hood-body">Tok</button>
+    <button type="button" role="tab" id="htab-settings" aria-selected="false" aria-controls="hood-body">Podešavanja</button>
+  </div>
+  <div class="body" id="hood-body" role="tabpanel"></div>
+</aside>
+<noscript><p class="page">Demo treba JavaScript.</p></noscript>
+
+<script>
+"use strict";
+
+// ================================================================= icons (client's Heroicons)
+const ICONS = {
+  document: "M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z",
+  upload: "M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5",
+  chart: "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z",
+  logout: "M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9",
+  plus: "M12 4.5v15m7.5-7.5h-15",
+  trash: "m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0",
+  send: "M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5",
+  warning: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z",
+  "thumb-up": "M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z",
+  "thumb-down": "M7.498 15.25H4.372c-1.026 0-1.945-.694-2.054-1.715a12.137 12.137 0 0 1-.068-1.285c0-2.848.992-5.464 2.649-7.521C5.287 4.247 5.886 4 6.504 4h4.016a4.5 4.5 0 0 1 1.423.23l3.114 1.04a4.5 4.5 0 0 0 1.423.23h1.294M7.498 15.25c.618 0 .991.724.725 1.282A7.471 7.471 0 0 0 7.5 19.75 2.25 2.25 0 0 0 9.75 22a.75.75 0 0 0 .75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 0 0 2.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384m-10.253 1.5H9.7m8.075-9.75c.01.05.027.1.05.148.593 1.2.925 2.55.925 3.977 0 1.487-.36 2.89-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398-.306.774-1.086 1.227-1.918 1.227h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 0 0 .303-.54",
+  "thumb-up-solid": "M7.493 18.5c-.425 0-.82-.236-.975-.632A7.48 7.48 0 0 1 6 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75A.75.75 0 0 1 15 2a2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23h-.777ZM2.331 10.727a11.969 11.969 0 0 0-.831 4.398 12 12 0 0 0 .52 3.507C2.28 19.482 3.105 20 3.994 20H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 0 1-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.918 1.227Z",
+  "thumb-down-solid": "M15.73 5.5h1.035A7.465 7.465 0 0 1 18 9.625a7.465 7.465 0 0 1-1.235 4.125h-.148c-.806 0-1.534.446-2.031 1.08a9.04 9.04 0 0 1-2.861 2.4c-.723.384-1.35.956-1.653 1.715a4.499 4.499 0 0 0-.322 1.672v.633A.75.75 0 0 1 9 22a2.25 2.25 0 0 1-2.25-2.25c0-1.152.26-2.243.723-3.218.266-.558-.107-1.282-.725-1.282H3.622c-1.026 0-1.945-.694-2.054-1.715A12.137 12.137 0 0 1 1.5 12.25c0-2.848.992-5.464 2.649-7.521C4.537 4.247 5.136 4 5.754 4H9.77a4.5 4.5 0 0 1 1.423.23l3.114 1.04a4.5 4.5 0 0 0 1.423.23ZM21.669 14.023c.536-1.362.831-2.845.831-4.398 0-1.22-.182-2.398-.52-3.507-.26-.85-1.084-1.368-1.973-1.368H19.1c-.445 0-.72.498-.523.898.591 1.2.924 2.55.924 3.977a8.958 8.958 0 0 1-1.302 4.666c-.245.403.028.959.5.959h1.053c.832 0 1.612-.453 1.918-1.227Z",
+};
+function icon(name, cls = "i") {
+  const d = ICONS[name];
+  return name.endsWith("-solid")
+    ? `<svg class="${cls}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="${d}"/></svg>`
+    : `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
+}
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const fold = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "dj");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let FAST = false; // snapshot states skip every delay
+const pause = (ms) => sleep(FAST || reduceMotion ? 0 : ms);
+let uid = 0;
+const newId = (p) => `${p}-${++uid}`;
+
+// ================================================================= fictional documents
+// Each page: [heading, paragraphs]. Each intent: keywords (folded), answer with [n],
+// sources as [page, paragraph index], and the standalone query a follow-up becomes.
+const LIBRARY = {
+  ugovor: {
+    name: "ugovor-o-zakupu.pdf", size: 27184,
+    pages: [
+      ["Ugovor o zakupu poslovnog prostora", [
+        "Zaključen u Novom Sadu između društva Primer d.o.o. (zakupodavac) i društva Ilustracija d.o.o. (zakupac).",
+        "Član 1. Predmet zakupa je poslovni prostor površine 84 m² u ulici Izmišljena 12, prizemlje.",
+        "Član 2. Ugovor se zaključuje na period od tri godine, počev od 1. marta 2026."]],
+      ["Zakupnina i depozit", [
+        "Član 3. Mesečna zakupnina iznosi 1.250 evra u dinarskoj protivvrednosti po srednjem kursu NBS na dan plaćanja.",
+        "Član 4. Zakupnina se plaća do petog dana u mesecu za tekući mesec.",
+        "Član 5. Zakupac uplaćuje depozit u visini dve mesečne zakupnine, koji se vraća u roku od 15 dana po isteku ugovora."]],
+      ["Otkaz i sporovi", [
+        "Član 6. Svaka strana može otkazati ugovor uz otkazni rok od 90 dana, pisanim obaveštenjem preporučenom poštom.",
+        "Član 7. Zakupac ne sme da izdaje prostor u podzakup bez pisane saglasnosti zakupodavca.",
+        "Član 8. Za sporove je nadležan Privredni sud u Novom Sadu."]],
+    ],
+    suggestions: ["Koliki je otkazni rok?", "A depozit?", "Kada se plaća zakupnina?", "Ko je direktor zakupca?"],
+    intents: [
+      { kw: ["otkaz", "raskid", "raskin"], answer: "Otkazni rok je 90 dana. Otkaz se daje pisanim obaveštenjem, preporučenom poštom [1].", src: [[3, 0]], query: "Koliki je otkazni rok ugovora o zakupu i kako se daje otkaz?" },
+      { kw: ["depozit", "kaucij", "garancij"], answer: "Depozit iznosi dve mesečne zakupnine i vraća se u roku od 15 dana po isteku ugovora [1].", src: [[2, 2]], query: "Koliki je depozit po ugovoru o zakupu i kada se vraća?" },
+      { kw: ["zakupnin", "kirij", "placa", "plati", "cena", "kosta", "evra"], answer: "Mesečna zakupnina je 1.250 evra, u dinarskoj protivvrednosti po srednjem kursu NBS na dan plaćanja [1]. Plaća se do petog dana u mesecu za tekući mesec [2].", src: [[2, 0], [2, 1]], query: "Kolika je mesečna zakupnina i do kada se plaća?" },
+      { kw: ["traj", "period", "koliko dugo", "pocinje", "vazi", "istice", "godin"], answer: "Ugovor je zaključen na tri godine, počev od 1. marta 2026 [1].", src: [[1, 2]], query: "Na koliko je zaključen ugovor o zakupu i od kada važi?" },
+      { kw: ["podzakup", "izdaj", "izdat", "drugom"], answer: "Ne bez dozvole: zakupac ne sme da izdaje prostor u podzakup bez pisane saglasnosti zakupodavca [1].", src: [[3, 1]], query: "Da li zakupac sme da izda prostor u podzakup?" },
+      { kw: ["povrsin", "kvadrat", "adres", "gde je", "ulic", "prostor"], answer: "Predmet zakupa je poslovni prostor od 84 m² u prizemlju, u ulici Izmišljena 12 [1].", src: [[1, 1]], query: "Koji prostor je predmet zakupa i gde se nalazi?" },
+      { kw: ["spor", "sud", "nadlez"], answer: "Za sporove je nadležan Privredni sud u Novom Sadu [1].", src: [[3, 2]], query: "Koji sud je nadležan za sporove iz ugovora?" },
+      { kw: ["strane", "ugovarac", "zakupodav", "zakupac", "ko je zakup", "potpis", "firm"], answer: "Zakupodavac je Primer d.o.o., a zakupac Ilustracija d.o.o.; ugovor je zaključen u Novom Sadu [1].", src: [[1, 0]], query: "Ko su ugovorne strane u ugovoru o zakupu?" },
+    ],
+  },
+  kucni: {
+    name: "kucni-red.pdf", size: 18442,
+    pages: [
+      ["Kućni red stambene zgrade Izmišljena 12", [
+        "Član 1. Noćni mir traje od 22 do 6 časova. Nedeljom i praznicima mir se poštuje i od 14 do 17 časova.",
+        "Član 2. Radovi u stanovima dozvoljeni su radnim danima od 8 do 18 časova, a subotom od 9 do 14 časova.",
+        "Član 3. Kućni ljubimci se u zajedničkim prostorijama vode na povocu; vlasnik čisti za njima."]],
+      ["Zajednički prostor", [
+        "Član 4. Smeće se odlaže u kontejnere u dvorištu. Krupni otpad se prijavljuje upravniku zgrade.",
+        "Član 5. Bicikli i kolica se drže u ostavi u podrumu, ne na stepeništu.",
+        "Član 6. Kućni red je istaknut na tabli na ulazu; izmene usvaja skupština stambene zajednice."]],
+    ],
+    suggestions: ["Kada je noćni mir?", "A subotom radovi?", "Gde se drže bicikli?"],
+    intents: [
+      { kw: ["nocni", "mir", "buka", "tiho", "tisin"], answer: "Noćni mir traje od 22 do 6 časova, a nedeljom i praznicima i od 14 do 17 časova [1].", src: [[1, 0]], query: "Kada traje noćni mir po kućnom redu?" },
+      { kw: ["radov", "busen", "renovir", "majstor", "subot"], answer: "Radovi u stanovima su dozvoljeni radnim danima od 8 do 18 časova, a subotom od 9 do 14 časova [1].", src: [[1, 1]], query: "Kada su dozvoljeni radovi u stanovima, i subotom?" },
+      { kw: ["ljubim", "pas", "psa", "mack", "povoc"], answer: "Ljubimci se u zajedničkim prostorijama vode na povocu, a vlasnik čisti za njima [1].", src: [[1, 2]], query: "Koja su pravila za kućne ljubimce?" },
+      { kw: ["smece", "otpad", "kontejner", "djubre"], answer: "Smeće ide u kontejnere u dvorištu, a krupni otpad se prijavljuje upravniku zgrade [1].", src: [[2, 0]], query: "Gde se odlaže smeće i krupni otpad?" },
+      { kw: ["bicik", "kolica", "ostav", "podrum"], answer: "Bicikli i kolica se drže u ostavi u podrumu, ne na stepeništu [1].", src: [[2, 1]], query: "Gde se drže bicikli i kolica?" },
+    ],
+  },
+  izvestaj: {
+    name: "izvestaj-udruzenja-2025.pdf", size: 41872,
+    pages: [
+      ["Godišnji izveštaj udruženja „Zeleni kvart“ za 2025.", [
+        "Udruženje je krajem 2025. imalo 128 članova, 31 više nego godinu ranije.",
+        "Tokom godine organizovano je 14 akcija sadnje u kojima je posađeno 420 sadnica.",
+        "Najveća akcija bila je u parku kod škole, sa 96 sadnica i 60 učesnika."]],
+      ["Finansije", [
+        "Ukupan budžet za 2025. iznosio je 1,2 miliona dinara.",
+        "Donacije građana činile su 60% prihoda, a gradski grant 40%.",
+        "Za 2026. planirano je 20 akcija i otvaranje rasadnika u dvorištu doma kulture."]],
+    ],
+    suggestions: ["Koliko članova ima udruženje?", "Koliko je sadnica posađeno?", "Odakle je novac?"],
+    intents: [
+      { kw: ["clan", "koliko ih", "broj"], answer: "Krajem 2025. udruženje je imalo 128 članova, 31 više nego godinu ranije [1].", src: [[1, 0]], query: "Koliko članova je imalo udruženje krajem 2025?" },
+      { kw: ["sadnic", "drv", "akcij", "sadnj"], answer: "Organizovano je 14 akcija sadnje i posađeno 420 sadnica [1]; najveća akcija, u parku kod škole, imala je 96 sadnica i 60 učesnika [2].", src: [[1, 1], [1, 2]], query: "Koliko je akcija sadnje i sadnica bilo u 2025?" },
+      { kw: ["budzet", "novac", "finans", "prihod", "donacij", "grant", "odakle"], answer: "Budžet za 2025. bio je 1,2 miliona dinara [1]: 60% iz donacija građana i 40% iz gradskog granta [2].", src: [[2, 0], [2, 1]], query: "Koliki je bio budžet udruženja i odakle je novac?" },
+      { kw: ["plan", "2026", "sledec", "rasadnik"], answer: "Za 2026. planirano je 20 akcija i otvaranje rasadnika u dvorištu doma kulture [1].", src: [[2, 2]], query: "Šta udruženje planira za 2026?" },
+    ],
+  },
+};
+const NO_TEXT = "PDF nema tekstualni sloj (verovatno je skeniran), pa nema šta da se pretražuje. Skenirani PDF-ovi se ovde ne čitaju OCR-om.";
+const NOT_IN_DOC = "Dokument to ne navodi.";
+
+// ================================================================= configuration presets (.env)
+const PRESETS = {
+  claude: { label: "Claude + OpenAI embedding (podrazumevano)", provider: "anthropic", models: ["claude-opus-5-5", "claude-sonnet-5-5"], embedding: "openai · text-embedding-3-small",
+    env: ["CHAT_PROVIDER=anthropic", "CHAT_MODELS=claude-opus-5-5,claude-sonnet-5-5", "ANTHROPIC_API_KEY=sk-ant-…", "EMBEDDING_PROVIDER=openai", "EMBEDDING_MODEL=text-embedding-3-small", "OPENAI_API_KEY=sk-…"] },
+  foundry: { label: "Sve u Microsoft Foundry", provider: "anthropic-foundry", models: ["claude-opus-5-5", "claude-sonnet-5-5"], embedding: "azure-openai · text-embedding-3-small",
+    env: ["CHAT_PROVIDER=anthropic-foundry", "CHAT_MODELS=claude-opus-5-5,claude-sonnet-5-5   # imena deploymenta", "ANTHROPIC_FOUNDRY_RESOURCE=moj-resurs", "ANTHROPIC_FOUNDRY_API_KEY=…", "EMBEDDING_PROVIDER=azure-openai", "EMBEDDING_MODEL=text-embedding-3-small", "AZURE_OPENAI_ENDPOINT=https://moj-resurs.openai.azure.com", "AZURE_OPENAI_API_KEY=…"] },
+  openai: { label: "Samo OpenAI", provider: "openai", models: ["gpt-5.1", "gpt-5-mini"], embedding: "openai · text-embedding-3-small",
+    env: ["CHAT_PROVIDER=openai", "CHAT_MODELS=gpt-5.1,gpt-5-mini", "OPENAI_API_KEY=sk-…", "EMBEDDING_PROVIDER=openai", "EMBEDDING_MODEL=text-embedding-3-small"] },
+  mixed: { label: "Mešano: Claude i OpenAI u istom eksperimentu", provider: "anthropic", models: ["claude-opus-5-5", "openai:gpt-5.1"], embedding: "openai · text-embedding-3-small",
+    env: ["CHAT_PROVIDER=anthropic", "CHAT_MODELS=claude-opus-5-5,openai:gpt-5.1", "ANTHROPIC_API_KEY=sk-ant-…", "OPENAI_API_KEY=sk-…"] },
+  ollama: { label: "Lokalno, bez ključeva (Ollama)", provider: "ollama", models: ["llama3.2", "gemma4:31b-cloud"], embedding: "ollama · nomic-embed-text",
+    env: ["CHAT_PROVIDER=ollama", "CHAT_MODELS=llama3.2,gemma4:31b-cloud", "EMBEDDING_PROVIDER=ollama", "EMBEDDING_MODEL=nomic-embed-text", 'EMBED_DOCUMENT_PREFIX="search_document: "', 'EMBED_QUERY_PREFIX="search_query: "'] },
+};
+const STORES = {
+  qdrant: { label: "Qdrant, ugrađen (fajl u data/, bez servera)", short: "Qdrant (ugrađen)", env: ["VECTOR_STORE=qdrant   # podrazumevano"] },
+  "qdrant-server": { label: "Qdrant server", short: "Qdrant server", env: ["VECTOR_STORE=qdrant", "QDRANT_URL=http://qdrant:6333"] },
+  pinecone: { label: "Pinecone (serverless, imenski prostor po PDF-u)", short: "Pinecone", env: ["VECTOR_STORE=pinecone", "PINECONE_API_KEY=pcsk_…", "PINECONE_INDEX=pdf-assistant"] },
+};
+const STORAGES = {
+  local: { label: "Lokalno: SQLite + PDF-ovi na disku (bez servisa)", db: "SQLite", file: (id) => `data/pdfs/${id}.pdf`, gone: "fajl sa diska",
+    env: ["# baza: SQLite u data/, PDF-ovi u data/pdfs/ (podrazumevano)"] },
+  "supabase-local": { label: "Supabase lokalno (npx supabase start)", db: "Postgres (Supabase)", file: (id) => `Supabase Storage, privatni bucket pdfs: ${id}.pdf`, gone: "fajl iz bucketa pdfs",
+    env: ["DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres", "PDF_STORAGE=supabase", "SUPABASE_URL=http://127.0.0.1:54321", "SUPABASE_SECRET_KEY=sb_secret_…   # iz `npx supabase status`"] },
+  "supabase-cloud": { label: "Supabase Cloud (projekat na supabase.com)", db: "Postgres (Supabase)", file: (id) => `Supabase Storage, privatni bucket pdfs: ${id}.pdf`, gone: "fajl iz bucketa pdfs",
+    env: ["DATABASE_URL=postgresql://postgres.<ref>:…@<session pooler>:5432/postgres", "PDF_STORAGE=supabase", "SUPABASE_URL=https://<ref>.supabase.co", "SUPABASE_SECRET_KEY=sb_secret_…"] },
+};
+
+function modelRef(entry, provider) {
+  const [head, ...rest] = entry.split(":");
+  const known = ["openai", "azure-openai", "anthropic", "anthropic-foundry", "ollama"];
+  return known.includes(head) && rest.length ? { key: entry, label: rest.join(":") } : { key: `${provider}:${entry}`, label: entry };
+}
+
+// ================================================================= state
+const state = {
+  user: { email: "demo@primer.rs" },
+  docs: [],
+  convs: {},          // docId -> conversations (newest first)
+  activeConv: {},     // docId -> conversation id
+  tab: "chat",        // narrow screens: chat | pdf
+  streaming: false,
+  draft: "",
+  config: { preset: "claude", store: "qdrant", storage: "local", tracing: true, experiments: true, failNext: false },
+  // Votes from earlier (fictional) users, then the ones cast in this demo.
+  tallies: {
+    llm: { "anthropic:claude-opus-5-5": [14, 2], "anthropic:claude-sonnet-5-5": [11, 4], "openai:gpt-5.1": [3, 3] },
+    retriever: { top_3: [6, 5], top_5: [15, 2], top_8: [7, 2] },
+    memory: { all_history: [16, 4], last_2_turns: [12, 5] },
+  },
+  flashScore: null,
+  hood: { open: false, tab: "flow", events: [] },
+};
+
+function addDoc(key, { status = "ready", minutesAgo = 0 } = {}) {
+  const lib = LIBRARY[key];
+  const doc = {
+    id: newId("pdf"), key, name: lib ? lib.name : key, size: lib ? lib.size : 912384,
+    pages: status === "ready" && lib ? lib.pages.length : null,
+    chunks: status === "ready" && lib ? lib.pages.reduce((n, p) => n + p[1].length, 0) : null,
+    status, error: status === "failed" ? NO_TEXT : null,
+    created: new Date(Date.now() - minutesAgo * 60000),
+  };
+  state.docs.unshift(doc);
+  state.convs[doc.id] = [];
+  return doc;
+}
+addDoc("sken-racuna.pdf", { status: "failed", minutesAgo: 60 * 26 });
+addDoc("kucni", { minutesAgo: 60 * 3 });
+addDoc("ugovor", { minutesAgo: 42 });
+
+// ================================================================= experiment
+function components(kind) {
+  if (kind === "llm") {
+    const preset = PRESETS[state.config.preset];
+    return preset.models.map((m) => modelRef(m, preset.provider)).map((r) => ({ name: r.key, label: r.label }));
+  }
+  if (kind === "retriever") return [3, 5, 8].map((k) => ({ name: `top_${k}`, label: `${k} ${k === 3 ? "isečka" : "isečaka"}`, k }));
+  return [{ name: "all_history", label: "cela istorija", turns: 0 }, { name: "last_2_turns", label: "poslednja 2 pitanja", turns: 2 }];
+}
+const KIND_TITLE = { llm: "Jezički model", retriever: "Pretraga (broj isečaka)", memory: "Memorija (istorija razgovora)" };
+function rawWeight([up, down] = [0, 0]) { return Math.max((up + 1) / (up + down + 1), 0.1); }
+function weights(kind) {
+  const list = components(kind);
+  if (!state.config.experiments) return Object.fromEntries(list.map((c, i) => [c.name, i === 0 ? 1 : 0]));
+  const raw = list.map((c) => rawWeight(state.tallies[kind][c.name]));
+  const total = raw.reduce((a, b) => a + b, 0);
+  return Object.fromEntries(list.map((c, i) => [c.name, raw[i] / total]));
+}
+function draw(kind) {
+  const w = weights(kind);
+  let r = Math.random(), acc = 0;
+  for (const [name, p] of Object.entries(w)) { acc += p; if (r <= acc) return components(kind).find((c) => c.name === name); }
+  return components(kind)[0];
+}
+function describe(kind, name) {
+  return components(kind).find((c) => c.name === name) || { name, label: name.includes(":") ? name.split(":").slice(1).join(":") : name, inactive: true };
+}
+
+// ================================================================= "under the hood" log
+function hoodEvent(event) {
+  event.id = newId("ev"); event.at = new Date();
+  state.hood.events.unshift(event);
+  state.hood.events = state.hood.events.slice(0, 12);
+  renderHood();
+  return event;
+}
+// Serbian plural of "poruka": 1 poruka, 2 poruke, 5 poruka, 21 poruka, 12 poruka.
+function porukaPlural(n) {
+  if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return "poruke";
+  return "poruka";
+}
+const timeOf = (d) => d.toLocaleTimeString("sr-Latn-RS", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+function renderEvent(ev) {
+  const when = `<span class="when">${timeOf(ev.at)}</span>`;
+  if (ev.type === "index") {
+    const steps = ev.steps.map((s, i) => `<li class="${i < ev.done ? "step-done" : "step-pending"}">${s}</li>`).join("");
+    return `<div class="event"><h3>Obrada PDF-a: ${esc(ev.name)}${when}</h3><ol>${steps}</ol></div>`;
+  }
+  if (ev.type === "draw") {
+    const kinds = Object.entries(ev.kinds).map(([kind, info]) => `<div class="kind">${KIND_TITLE[kind]}</div>` +
+      info.options.map((o) => `<div class="prob ${o.name === info.picked ? "picked" : ""}"><span>${esc(o.label)}</span><div class="track"><div class="fill" style="width:${(o.p * 100).toFixed(1)}%"></div></div><span>${Math.round(o.p * 100)}%</span></div>`).join("")).join("");
+    const note = state.config.experiments ? "Svaka komponenta se izvlači nasumično, srazmerno težini <code>(za + 1) / (za + protiv + 1)</code>, najmanje 0,1." : "Eksperiment je isključen (<code>EXPERIMENTS=false</code>): uvek prva komponenta sa liste.";
+    return `<div class="event"><h3>Novi razgovor: izvlačenje komponenti${when}</h3><p class="muted" style="margin:0 0 .25rem">${note}</p>${kinds}</div>`;
+  }
+  if (ev.type === "turn") {
+    const hits = ev.hits ? `<ul class="hits">${ev.hits.map((h) => `<li class="${h.cited ? "cited" : ""}"><span>str. ${h.page}</span><span>${h.score.toFixed(2)}</span><span class="snip" title="${esc(h.text)}">${esc(h.text)}</span></li>`).join("")}</ul>` : "";
+    const steps = [
+      ev.rewrite ? `Nastavak razgovora prepisan za pretragu (${esc(ev.llm)}): <em>„${esc(ev.question)}“</em> → <em>„${esc(ev.rewrite)}“</em>` : (ev.hadHistory ? "Prepisivanje preskočeno: pitanje je već samostalno." : "Prepisivanje preskočeno: nema ranijih pitanja."),
+      `Pretraga: embedding pitanja (${esc(ev.embedding)}), pa ${ev.k} najbližih isečaka <strong>samo ovog PDF-a</strong> u bazi ${esc(ev.store)}:${hits}`,
+      `Prompt: uputstvo + ${ev.hitsShown} numerisanih isečaka sa stranama + istorija (${esc(ev.memoryLabel)}: ${ev.historyMessages} ${porukaPlural(ev.historyMessages)}${ev.skipped ? ", pitanje bez odgovora izostavljeno" : ""}) ≈ ${ev.tokens.toLocaleString("sr-Latn-RS")} od 24.000 tokena.`,
+      `Odgovor: <code>${esc(ev.llm)}</code> strimuje NDJSON (<code>start</code> → <code>delta</code> ×${ev.deltas || "…"} → <code>${ev.failed ? "error" : "end"}</code>).`,
+      ev.failed ? "Greška modela: delimičan odgovor <strong>nije sačuvan</strong>, a pitanje ne ulazi u istoriju sledećeg pitanja." : (ev.done ? `Sačuvano: ${ev.sources.length ? `izvori ${ev.sources.map((s) => `[${s.n}] str. ${s.page}`).join(", ")}` : "bez izvora (odgovor ne navodi nijedan isečak)"}.` : "…"),
+    ];
+    if (state.config.tracing) steps.push(`Langfuse: trag <code>chat-turn</code> sa koracima <code>rewrite-followup</code>, <code>retrieve</code>, <code>answer</code>; korisnik = user, razgovor = session.`);
+    return `<div class="event"><h3>Pitanje: „${esc(ev.question)}“${when}</h3><ol>${steps.slice(0, ev.step).map((s) => `<li class="step-done">${s}</li>`).join("")}${steps.slice(ev.step).map((s) => `<li class="step-pending">${s}</li>`).join("")}</ol></div>`;
+  }
+  if (ev.type === "vote") {
+    return `<div class="event"><h3>Glas ${ev.score === 1 ? "za" : ev.score === -1 ? "protiv" : "povučen"}${when}</h3><p style="margin:0">Glas ide svim trima komponentama razgovora: <code>${esc(ev.llm)}</code>, <code>${esc(ev.retriever)}</code>, <code>${esc(ev.memory)}</code>. Čuva se u bazi uz komponente, pa ostaje i kad se razgovor ili PDF obriše. Nove težine vidiš na strani Ocene.</p></div>`;
+  }
+  if (ev.type === "delete") return `<div class="event"><h3>Brisanje: ${esc(ev.name)}${when}</h3><p style="margin:0">Briše se red u bazi, ${esc(ev.gone)}, vektori (${esc(ev.store)}) i razgovori; glasovi ostaju za eksperiment.</p></div>`;
+  return "";
+}
+
+function renderHood() {
+  const body = document.getElementById("hood-body");
+  document.getElementById("hood").hidden = !state.hood.open;
+  document.body.classList.toggle("hood-open", state.hood.open);
+  document.getElementById("hood-toggle").setAttribute("aria-pressed", String(state.hood.open));
+  for (const t of ["flow", "settings"]) document.getElementById(`htab-${t}`).setAttribute("aria-selected", String(state.hood.tab === t));
+  if (!state.hood.open) return;
+  if (state.hood.tab === "flow") {
+    body.innerHTML = `<p class="intro">Šta bi pravi backend uradio za svaki korak koji napraviš u demou: obrada PDF-a, izvlačenje komponenti, pretraga, prompt, strim i čuvanje.</p>` +
+      (state.hood.events.length ? state.hood.events.map(renderEvent).join("") : `<p class="muted">Još ništa. Otvori ugovor i postavi pitanje, ili otpremi PDF.</p>`);
+  } else {
+    const c = state.config;
+    const preset = PRESETS[c.preset], store = STORES[c.store], storage = STORAGES[c.storage];
+    const env = [
+      `<span class="c"># backend/.env (ili promenljive okruženja)</span>`, ...preset.env.map(esc), ...storage.env.map((l) => l.startsWith("#") ? `<span class="c">${esc(l)}</span>` : esc(l)), ...store.env.map(esc),
+      c.tracing ? `LANGFUSE_PUBLIC_KEY=pk-lf-…\nLANGFUSE_SECRET_KEY=sk-lf-…\nLANGFUSE_BASE_URL=https://langfuse.moja-firma.rs` : `<span class="c"># tracing isključen: nema LANGFUSE_* ključeva</span>`,
+      `RETRIEVER_TOP_K=3,5,8`, `MEMORY_TURNS=0,2`, `EXPERIMENTS=${c.experiments}`,
+    ].join("\n");
+    body.innerHTML = `<p class="intro">Opcije koje pravi PDF asistent čita iz okruženja. Promena ovde menja šta demo pokazuje (modele u novim razgovorima, imena u koracima); ostale opcije su u README-u.</p>
+      <div class="setting"><label for="cfg-preset">Modeli</label><select id="cfg-preset">${Object.entries(PRESETS).map(([k, p]) => `<option value="${k}" ${k === c.preset ? "selected" : ""}>${esc(p.label)}</option>`).join("")}</select>
+        <p class="help">Svaki posao bira provajdera posebno: odgovori (Claude, OpenAI, Foundry, Ollama) i embedding (OpenAI, Azure, Ollama; Claude nema embedding). Modeli koji se izbace ostaju na Ocenama kao neaktivni.</p></div>
+      <div class="setting"><label for="cfg-storage">Baza i PDF fajlovi</label><select id="cfg-storage">${Object.entries(STORAGES).map(([k, s]) => `<option value="${k}" ${k === c.storage ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
+        <p class="help">Na Supabase-u migracija zatvara tabele za javni Data API (RLS bez politika), a bucket je privatan: PDF-ove čita samo backend, secret ključem.</p></div>
+      <div class="setting"><label for="cfg-store">Baza vektora</label><select id="cfg-store">${Object.entries(STORES).map(([k, s]) => `<option value="${k}" ${k === c.store ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select></div>
+      <div class="setting"><span class="lbl">Ostalo</span>
+        <label class="check"><input type="checkbox" id="cfg-experiments" ${c.experiments ? "checked" : ""}> <span>Eksperiment: nasumičan izbor modela, broja isečaka i istorije po razgovoru</span></label>
+        <label class="check"><input type="checkbox" id="cfg-tracing" ${c.tracing ? "checked" : ""}> <span>Langfuse tracing (kad postoje ključevi)</span></label>
+        <label class="check"><input type="checkbox" id="cfg-fail" ${c.failNext ? "checked" : ""}> <span>Prekini sledeći odgovor (simulira pad modela usred strima)</span></label></div>
+      <pre class="env">${env}</pre>`;
+    body.querySelector("#cfg-preset").onchange = (e) => { c.preset = e.target.value; renderHood(); render(); };
+    body.querySelector("#cfg-store").onchange = (e) => { c.store = e.target.value; renderHood(); };
+    body.querySelector("#cfg-storage").onchange = (e) => { c.storage = e.target.value; renderHood(); };
+    body.querySelector("#cfg-experiments").onchange = (e) => { c.experiments = e.target.checked; renderHood(); };
+    body.querySelector("#cfg-tracing").onchange = (e) => { c.tracing = e.target.checked; renderHood(); };
+    body.querySelector("#cfg-fail").onchange = (e) => { c.failNext = e.target.checked; };
+  }
+}
+
+// ================================================================= routing and shell
+function route() {
+  const h = location.hash.replace(/^#\/?/, "");
+  if (!state.user && h !== "registracija") return { name: "signin" };
+  if (h === "registracija") return { name: "signup" };
+  if (h === "otpremi") return { name: "upload" };
+  if (h === "ocene") return { name: "scores" };
+  if (h.startsWith("dokument/")) return { name: "doc", id: h.slice(9) };
+  if (h === "prijava") return { name: "signin" };
+  return { name: "documents" };
+}
+function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
+
+function renderNav(r) {
+  const nav = document.getElementById("nav");
+  const cur = (names) => (names.includes(r.name) ? 'aria-current="page"' : "");
+  nav.innerHTML = `<a href="#/dokumenti" class="brand">${icon("document", "i6")}<span>PDF asistent</span></a>` + (state.user
+    ? `<div class="nav-links">
+        <a class="nav-link" href="#/dokumenti" ${cur(["documents", "doc"])}>${icon("document")}<span>Dokumenti</span></a>
+        <a class="nav-link" href="#/otpremi" ${cur(["upload"])}>${icon("upload")}<span>Otpremi PDF</span></a>
+        <a class="nav-link" href="#/ocene" ${cur(["scores"])}>${icon("chart")}<span>Ocene</span></a>
+        <span class="nav-email" title="Prijavljeni ste kao ${esc(state.user.email)}">${esc(state.user.email)}</span>
+        <button type="button" class="nav-link" id="signout">${icon("logout")}<span>Odjava</span></button></div>`
+    : `<div class="nav-links"><a class="nav-link" href="#/prijava" ${cur(["signin"])}>Prijava</a><a class="nav-link" href="#/registracija" ${cur(["signup"])}>Registracija</a></div>`);
+  const out = document.getElementById("signout");
+  if (out) out.onclick = () => { state.user = null; go("#/prijava"); };
+}
+
+const fmtDate = (d) => d.toLocaleString("sr-Latn-RS", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const fmtSize = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1).replace(".", ",")} MB` : `${Math.round(b / 1024)} kB`);
+const badge = (s) => `<span class="badge ${s}">${s === "processing" ? '<span class="spin" aria-hidden="true"></span>' : ""}${{ processing: "Obrađuje se", ready: "Spreman", failed: "Greška" }[s]}</span>`;
+
+// Two-step delete, as the client's ConfirmButton: first click arms, second deletes.
+function confirmButton(el, onConfirm) {
+  let timer;
+  el.onclick = () => {
+    if (!el.classList.contains("armed")) {
+      el.classList.add("armed"); el.dataset.label = el.innerHTML; el.innerHTML = "Sigurno?";
+      timer = setTimeout(() => { el.classList.remove("armed"); el.innerHTML = el.dataset.label; }, 4000);
+      return;
+    }
+    clearTimeout(timer); onConfirm();
+  };
+}
+
+// ================================================================= views
+function viewDocuments(main) {
+  main.innerHTML = `<div class="page">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem"><h1>Dokumenti</h1>
+      <a href="#/otpremi" class="btn-primary">${icon("upload")} Otpremi PDF</a></div>
+    ${state.docs.length ? `<ul class="doc-list" aria-label="Lista dokumenata">${state.docs.map((d) => `
+      <li>${icon("document", "i6 doc-icon")}
+        <div class="grow"><a class="name" href="#/dokument/${d.id}" title="${esc(d.name)}">${esc(d.name)}</a>
+          <p class="xs muted" style="margin:0">${fmtDate(d.created)} · ${fmtSize(d.size)}${d.pages ? ` · ${d.pages} str.` : ""}</p>
+          ${d.status === "failed" ? `<p class="err">${esc(d.error)}</p>` : ""}</div>
+        ${badge(d.status)}
+        <button type="button" class="danger-btn" data-del="${d.id}" aria-label="Obriši ${esc(d.name)}">Obriši</button></li>`).join("")}</ul>`
+    : `<div class="card" style="margin-top:2rem;padding:3rem 1.5rem;text-align:center;border-style:dashed">${icon("document", "i6")}<p style="font-weight:500">Još nema dokumenata.</p><p class="small muted"><a href="#/otpremi" style="color:var(--blue-700)">Otpremite PDF</a> i postavljajte pitanja o njemu.</p></div>`}
+  </div>`;
+  main.querySelectorAll("[data-del]").forEach((b) => confirmButton(b, () => {
+    const doc = state.docs.find((d) => d.id === b.dataset.del);
+    state.docs = state.docs.filter((d) => d !== doc);
+    hoodEvent({ type: "delete", name: doc.name, store: STORES[state.config.store].short, gone: STORAGES[state.config.storage].gone });
+    render();
+  }));
+}
+
+const SAMPLES = [
+  { key: "izvestaj", note: "2 strane teksta: dobija se „Spreman“ i može da se pita." },
+  { key: "sken-ugovora.pdf", note: "skenirane strane bez teksta: dobija se „Greška“ sa objašnjenjem." },
+];
+function viewUpload(main) {
+  main.innerHTML = `<div class="upload"><h1>Otpremi PDF</h1>
+    <p class="lead">Najviše 50 MB. Posle otpremanja dokument se obrađuje, pa pitanja možete postavljati kad bude spreman.</p>
+    <form class="card" id="upload-form" novalidate>
+      <fieldset style="border:0;margin:0;padding:0;display:grid;gap:.5rem"><legend class="small" style="font-weight:500;margin-bottom:.4rem">PDF fajl <span class="muted" style="font-weight:400">(u demou se bira jedan od primera; u aplikaciji fajl sa diska)</span></legend>
+        ${SAMPLES.map((s, i) => { const name = LIBRARY[s.key]?.name || s.key; return `<label class="sample"><input type="radio" name="sample" value="${s.key}" ${i === 0 ? "checked" : ""}><span><span class="small" style="font-weight:500">${esc(name)}</span><br><span class="xs muted">${esc(s.note)}</span></span></label>`; }).join("")}
+      </fieldset>
+      <div id="up-progress" hidden><div class="progress"><div id="up-bar" style="width:0"></div></div><p class="xs muted" id="up-text" aria-live="polite" style="margin:.375rem 0 0"></p></div>
+      <button type="submit" class="btn-primary" id="up-submit">${icon("upload")} Otpremi</button>
+    </form></div>`;
+  main.querySelector("#upload-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const key = main.querySelector("input[name=sample]:checked").value;
+    main.querySelector("#up-submit").disabled = true;
+    main.querySelector("#up-progress").hidden = false;
+    for (let p = 0; p <= 100; p += 10) {
+      main.querySelector("#up-bar").style.width = p + "%";
+      main.querySelector("#up-text").textContent = p < 100 ? `Otpremanje… ${p}%` : "Čuvanje na serveru…";
+      await pause(70);
+    }
+    indexDoc(key);
+    go("#/dokumenti");
+  };
+}
+
+// Background indexing, step by step, as backend/src/pdf_assistant/documents/indexing.py.
+async function indexDoc(key) {
+  const lib = LIBRARY[key];
+  const failed = !lib;
+  const doc = addDoc(key, { status: "processing" });
+  const chunks = lib ? lib.pages.reduce((n, p) => n + p[1].length, 0) : 0;
+  const preset = PRESETS[state.config.preset];
+  const ev = hoodEvent({ type: "index", name: doc.name, done: 0, steps: [
+    `Fajl proveren (počinje sa <code>%PDF-</code>, ≤ 50 MB) i sačuvan: <code>${esc(STORAGES[state.config.storage].file(doc.id))}</code>; red u bazi (${STORAGES[state.config.storage].db}) sa statusom <code>processing</code>.`,
+    `Tekst po stranama (pypdfium2): ${lib ? `${lib.pages.length} strane` : "3 strane, sve prazne"}.`,
+    failed ? `Isečci: 0 → status <code>failed</code>: „${NO_TEXT}“` : `Isečci: ${chunks} (do 1000 znakova, preklop 150, svaki pamti stranu).`,
+    ...(failed ? [] : [
+      `Embedding: <code>${esc(preset.embedding)}</code>, u paketima po 64.`,
+      `Upis u ${esc(STORES[state.config.store].short)}${state.config.store === "pinecone" ? `: imenski prostor <code>${doc.id}</code>` : `: kolekcija <code>pdf_chunks</code>, <code>pdf_id=${doc.id}</code>`}.`,
+      `Status <code>ready</code>${state.config.tracing ? "; Langfuse trag <code>index-pdf</code>" : ""}.`]),
+  ] });
+  for (let i = 1; i <= ev.steps.length; i++) {
+    await pause(700);
+    ev.done = i; renderHood();
+  }
+  if (!state.docs.includes(doc)) return;
+  if (failed) { doc.status = "failed"; doc.error = NO_TEXT; doc.size = 912384; }
+  else { doc.status = "ready"; doc.pages = lib.pages.length; doc.chunks = chunks; }
+  if (["documents", "doc"].includes(route().name)) render();
+}
+
+// ---------------------------------------------------------------- document page
+function activeConv(doc) { return state.convs[doc.id].find((c) => c.id === state.activeConv[doc.id]) || null; }
+const convTitle = (c) => { const q = c.messages.find((m) => m.role === "user"); if (!q) return "Novi razgovor"; const t = q.content.replace(/\s+/g, " "); return t.length <= 60 ? t : t.slice(0, 59).trimEnd() + "…"; };
+
+function newConversation(doc) {
+  const picked = {}, kinds = {};
+  for (const kind of ["llm", "retriever", "memory"]) {
+    const w = weights(kind);
+    const c = draw(kind);
+    picked[kind] = c;
+    kinds[kind] = { picked: c.name, options: components(kind).map((o) => ({ name: o.name, label: o.label, p: w[o.name] })) };
+  }
+  const conv = { id: newId("conv"), created: new Date(), components: picked, messages: [] };
+  state.convs[doc.id].unshift(conv);
+  state.activeConv[doc.id] = conv.id;
+  hoodEvent({ type: "draw", kinds });
+  return conv;
+}
+
+function renderAnswerHtml(text, sources) {
+  const known = new Set(sources.map((s) => s.n));
+  return text.split(/\n{2,}/).map((para) => `<p>${esc(para).replace(/\[(\d{1,2})\]/g, (m, n) => known.has(+n)
+    ? `<button type="button" data-cite="${n}" title="Izvor ${n}, strana ${sources.find((s) => s.n === +n).page}" aria-label="Izvor ${n}, strana ${sources.find((s) => s.n === +n).page}">[${n}]</button>` : m)}</p>`).join("");
+}
+
+function messageHtml(m) {
+  if (m.role === "user") return `<div class="user-msg">${esc(m.content)}</div>`;
+  if (m.role === "pending") {
+    const body = m.text ? renderAnswerHtml(m.text, []) : "";
+    return `<article class="answer-wrap" aria-label="Odgovor u toku" aria-busy="${!m.error}"><div class="answer">${body ? body.replace(/<\/p>$/, `${m.error ? "" : '<span class="caret"></span>'}</p>`) : '<span class="dots" aria-label="Odgovor stiže"><span></span><span></span><span></span></span>'}
+      ${m.error ? `<p class="error" role="alert">${esc(m.error)} <span style="opacity:.8">Odgovor nije sačuvan.</span></p>` : ""}</div></article>`;
+  }
+  const sorted = [...m.sources].sort((a, b) => a.n - b.n);
+  return `<article class="answer-wrap" aria-label="Odgovor" data-msg-id="${m.id}"><div class="answer">${renderAnswerHtml(m.content, m.sources)}
+    ${sorted.length ? `<div class="sources"><span class="muted">Izvori:</span>${sorted.map((s) => `<button type="button" class="src-chip" data-page="${s.page}" title="Prikaži stranu ${s.page}">[${s.n}] str. ${s.page}</button>`).join("")}
+      <button type="button" class="linkish" data-toggle="${m.id}" aria-expanded="${!!m.open}">${m.open ? "Sakrij odlomke" : "Prikaži odlomke"}</button></div>
+      ${m.open ? `<ol class="passages">${sorted.map((s) => `<li><button type="button" class="linkish" style="padding:0;font-weight:500" data-page="${s.page}">[${s.n}] strana ${s.page}</button><p>${esc(s.text)}</p></li>`).join("")}</ol>` : ""}` : ""}
+    </div><div class="votes">
+      <button type="button" class="vote" data-vote="1" data-msg="${m.id}" aria-pressed="${m.vote === 1}" aria-label="Dobar odgovor" title="${m.vote === 1 ? "Ukloni glas" : "Dobar odgovor"}">${icon(m.vote === 1 ? "thumb-up-solid" : "thumb-up")}</button>
+      <button type="button" class="vote" data-vote="-1" data-msg="${m.id}" aria-pressed="${m.vote === -1}" aria-label="Loš odgovor" title="${m.vote === -1 ? "Ukloni glas" : "Loš odgovor"}">${icon(m.vote === -1 ? "thumb-down-solid" : "thumb-down")}</button></div></article>`;
+}
+
+function viewDoc(main, id) {
+  const doc = state.docs.find((d) => d.id === id);
+  if (!doc) { main.innerHTML = `<div class="page" style="text-align:center;padding-top:4rem"><h1 style="font-size:1.25rem">Dokument nije pronađen</h1><p class="small muted">Možda je obrisan.</p><a href="#/dokumenti" style="color:var(--blue-700)">Nazad na dokumente</a></div>`; return; }
+  const lib = LIBRARY[doc.key];
+  const conv = activeConv(doc);
+  const convs = state.convs[doc.id];
+  const ready = doc.status === "ready";
+  const blocked = doc.status === "processing" ? "Dokument se još obrađuje." : doc.status === "failed" ? "Dokument nema tekst za pretragu." : "";
+  const comps = conv ? conv.components : null;
+  main.innerHTML = `<div class="docpage"><h1 class="sr-only">${esc(doc.name)}</h1>
+    ${!ready ? `<div class="status-strip ${doc.status}" role="status">${badge(doc.status)} ${doc.status === "processing" ? "Dokument se obrađuje. Pitanja ćete moći da postavljate čim bude spreman." : esc(doc.error)}</div>` : ""}
+    <div class="tabs" role="tablist" aria-label="Prikaz">
+      <button type="button" role="tab" id="tab-chat" aria-selected="${state.tab === "chat"}" aria-controls="panel-chat">Razgovor</button>
+      <button type="button" role="tab" id="tab-pdf" aria-selected="${state.tab === "pdf"}" aria-controls="panel-pdf">PDF</button></div>
+    <div class="split">
+      <div class="chat-col" id="panel-chat" role="tabpanel" aria-labelledby="tab-chat" data-hidden="${state.tab !== "chat"}">
+        <div class="convbar"><div class="row">
+          <label for="conversation" class="sr-only">Razgovor</label>
+          <select id="conversation" ${state.streaming || !convs.length ? "disabled" : ""}>
+            ${convs.length ? convs.map((c) => `<option value="${c.id}" ${conv && c.id === conv.id ? "selected" : ""}>${esc(convTitle(c))} · ${fmtDate(c.created)}</option>`).join("") : `<option>Još nema razgovora</option>`}</select>
+          <button type="button" class="btn" id="new-conv" ${state.streaming || (conv && !conv.messages.length) ? "disabled" : ""} title="${conv && !conv.messages.length ? "Trenutni razgovor je još prazan" : ""}">${icon("plus")} Novi razgovor</button>
+          ${conv ? `<button type="button" class="danger-btn" id="del-conv" aria-label="Obriši razgovor" ${state.streaming ? "disabled" : ""}>${icon("trash")}</button>` : ""}
+        </div>${comps ? `<p class="components" title="Model: ${esc(comps.llm.label)} · Pretraga: ${esc(comps.retriever.label)} · Memorija: ${esc(comps.memory.label)}">${esc(comps.llm.label)} · ${esc(comps.retriever.label)} · ${esc(comps.memory.label)}</p>` : ""}</div>
+        <div class="messages" id="messages">${conv && conv.messages.length ? conv.messages.map(messageHtml).join("")
+          : `<div class="empty-chat"><p style="font-weight:500;color:var(--gray-800)">Postavite pitanje o dokumentu.</p><p>Odgovori navode izvore kao [1]; klik na izvor prikazuje tu stranu u PDF-u.</p>
+             ${ready && lib ? `<div class="suggest" aria-label="Primeri pitanja (samo u demou)">${lib.suggestions.map((s) => `<button type="button" class="chip" data-suggest="${esc(s)}">${esc(s)}</button>`).join("")}</div>` : ""}</div>`}</div>
+        ${conv && conv.messages.length && ready && lib ? `<div class="suggest" style="margin:0;padding:.5rem .75rem 0;justify-content:flex-start" aria-label="Primeri pitanja (samo u demou)">${lib.suggestions.map((s) => `<button type="button" class="chip" data-suggest="${esc(s)}" ${state.streaming ? "disabled" : ""}>${esc(s)}</button>`).join("")}</div>` : ""}
+        <form class="ask" id="ask"><label for="question" class="sr-only">Pitanje o dokumentu</label>
+          <div class="row"><textarea id="question" rows="1" maxlength="4000" placeholder="${state.streaming ? "Odgovor stiže…" : "Postavite pitanje o dokumentu"}" ${state.streaming || !ready ? "disabled" : ""}>${esc(state.draft)}</textarea>
+          <button type="submit" class="send" aria-label="Pošalji" title="Pošalji (Enter)" ${state.streaming || !ready ? "disabled" : ""}>${icon("send", "i6")}</button></div>
+          <p class="hint">${blocked || "Enter šalje, Shift+Enter nov red."}</p></form>
+      </div>
+      <div id="panel-pdf" role="tabpanel" aria-labelledby="tab-pdf" data-hidden="${state.tab !== "pdf"}">
+        <div class="viewer"><div class="viewer-bar"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(doc.name)}</span><span class="counter" id="counter">Strana 1 / ${lib ? lib.pages.length : 3}</span></div>
+          <div class="pages" id="pages">${lib ? lib.pages.map(([title, paras], i) => `<section class="pdf-page" id="page-${i + 1}" aria-label="Strana ${i + 1}">
+            <${i ? "h3" : "h2"}>${esc(title)}</${i ? "h3" : "h2"}>${paras.map((p) => `<p>${esc(p)}</p>`).join("")}<p class="foot">${i + 1} / ${lib.pages.length}</p></section>`).join("")
+            : [1, 2, 3].map((n) => `<section class="pdf-page scan" id="page-${n}" aria-label="Strana ${n}">skenirana strana ${n} (slika bez teksta)</section>`).join("")}</div></div>
+      </div></div></div>`;
+
+  // Wiring
+  main.querySelectorAll(".tabs [role=tab]").forEach((b) => b.onclick = () => { state.tab = b.id === "tab-pdf" ? "pdf" : "chat"; render(); });
+  const sel = main.querySelector("#conversation");
+  if (sel && convs.length) sel.onchange = () => { state.activeConv[doc.id] = sel.value; render(); };
+  const nb = main.querySelector("#new-conv");
+  if (nb) nb.onclick = () => { newConversation(doc); render(); };
+  const dc = main.querySelector("#del-conv");
+  if (dc) confirmButton(dc, () => { state.convs[doc.id] = convs.filter((c) => c !== conv); state.activeConv[doc.id] = state.convs[doc.id][0]?.id; render(); });
+  const ta = main.querySelector("#question");
+  ta.oninput = () => { state.draft = ta.value; };
+  ta.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(doc, ta.value); } };
+  main.querySelector("#ask").onsubmit = (e) => { e.preventDefault(); ask(doc, ta.value); };
+  main.querySelectorAll("[data-suggest]").forEach((b) => b.onclick = () => ask(doc, b.dataset.suggest));
+  const msgs = main.querySelector("#messages");
+  msgs.onclick = (e) => {
+    const cite = e.target.closest("[data-cite]");
+    if (cite) {
+      const answer = conv.messages.find((x) => x.id === cite.closest("[data-msg-id]").dataset.msgId);
+      const src = answer && answer.sources.find((s) => s.n === +cite.dataset.cite);
+      if (src) showPage(src.page);
+      return;
+    }
+    const pg = e.target.closest("[data-page]");
+    if (pg) { showPage(+pg.dataset.page); return; }
+    const tg = e.target.closest("[data-toggle]");
+    if (tg) { const m = conv.messages.find((x) => x.id === tg.dataset.toggle); m.open = !m.open; render(); return; }
+    const vb = e.target.closest("[data-vote]");
+    if (vb) vote(doc, conv, conv.messages.find((x) => x.id === vb.dataset.msg), +vb.dataset.vote);
+  };
+  msgs.scrollTop = msgs.scrollHeight;
+  // Page counter follows the scroll position.
+  const pages = main.querySelector("#pages");
+  const counter = main.querySelector("#counter");
+  const total = pages.children.length;
+  if (state.pdfScroll && state.pdfScroll.id === doc.id) pages.scrollTop = state.pdfScroll.top;
+  pages.onscroll = () => {
+    state.pdfScroll = { id: doc.id, top: pages.scrollTop };
+    const top = pages.getBoundingClientRect().top;
+    let current = 1;
+    [...pages.children].forEach((p, i) => { if (p.getBoundingClientRect().top - top < pages.clientHeight / 3) current = i + 1; });
+    counter.textContent = `Strana ${current} / ${total}`;
+  };
+}
+
+function showPage(n) {
+  if (matchMedia("(max-width: 1023px)").matches && state.tab !== "pdf") { state.tab = "pdf"; render(); }
+  const page = document.getElementById(`page-${n}`);
+  if (!page) return;
+  page.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  page.classList.remove("flash"); void page.offsetWidth; page.classList.add("flash");
+}
+
+// ---------------------------------------------------------------- asking: the RAG turn, simulated
+function findIntent(lib, text) {
+  const f = fold(text);
+  let best = null, bestScore = 0;
+  for (const intent of lib.intents) {
+    const score = intent.kw.filter((k) => f.includes(k)).length;
+    if (score > bestScore) { best = intent; bestScore = score; }
+  }
+  return best;
+}
+const looksLikeFollowUp = (q) => /^(a|i|pa|a sta|a sto|a koliko|a kada|a gde)\b/i.test(fold(q).trim()) || fold(q).trim().split(/\s+/).length <= 3;
+
+async function ask(doc, raw) {
+  const question = raw.trim();
+  if (!question || state.streaming || doc.status !== "ready") return;
+  const lib = LIBRARY[doc.key];
+  let conv = activeConv(doc) || newConversation(doc);
+  // A failed answer is shown until the next question, as in the app.
+  conv.messages = conv.messages.filter((m) => m.role !== "pending");
+  // History: answered pairs only, trimmed by the memory component.
+  const pairs = [];
+  conv.messages.forEach((m, i) => { const next = conv.messages[i + 1]; if (m.role === "user" && next && next.role === "assistant") pairs.push([m, next]); });
+  const skipped = conv.messages.some((m, i) => m.role === "user" && !(conv.messages[i + 1] && conv.messages[i + 1].role === "assistant") && i < conv.messages.length);
+  const turns = conv.components.memory.turns ?? (conv.components.memory.name === "all_history" ? 0 : 2);
+  const kept = turns === 0 ? pairs : pairs.slice(-turns);
+
+  // Resolve what the question is about; a follow-up borrows the last topic's document.
+  let intent = findIntent(lib, question);
+  let rewrite = null;
+  if (kept.length && looksLikeFollowUp(question)) rewrite = intent ? intent.query : (conv.lastIntent ? conv.lastIntent.query : null);
+  if (!intent && rewrite) intent = conv.lastIntent; // "a kako?" continues the last topic
+
+  state.draft = ""; state.streaming = true;
+  conv.messages.push({ id: newId("m"), role: "user", content: question });
+  const pending = { id: newId("p"), role: "pending", text: "", error: null };
+  conv.messages.push(pending);
+  render();
+
+  // Retrieval, as the hood shows it: cited paragraphs first, then the nearest others.
+  const all = lib.pages.flatMap(([, paras], p) => paras.map((t, j) => ({ page: p + 1, j, text: t })));
+  const k = conv.components.retriever.k ?? +conv.components.retriever.name.split("_")[1];
+  const citedKeys = new Set((intent ? intent.src : []).map(([p, j]) => `${p}:${j}`));
+  const ranked = all.map((c, i) => ({ ...c, cited: citedKeys.has(`${c.page}:${c.j}`), score: citedKeys.has(`${c.page}:${c.j}`) ? 0.83 - 0.03 * [...citedKeys].indexOf(`${c.page}:${c.j}`) : 0.58 - ((i * 7) % 11) / 100 }))
+    .sort((a, b) => b.score - a.score).slice(0, k);
+  const preset = PRESETS[state.config.preset];
+  const tokens = 260 + ranked.reduce((n, h) => n + Math.ceil(h.text.length / 4) + 8, 0) + kept.flat().reduce((n, m) => n + Math.ceil(m.content.length / 4) + 4, 0) + Math.ceil(question.length / 4);
+  const ev = hoodEvent({ type: "turn", step: 0, question, rewrite, hadHistory: kept.length > 0, llm: conv.components.llm.label, embedding: preset.embedding,
+    store: STORES[state.config.store].short, k, hits: ranked, hitsShown: ranked.length, memoryLabel: conv.components.memory.label,
+    historyMessages: kept.length * 2, skipped, tokens, deltas: 0, failed: false, done: false, sources: [] });
+
+  await pause(rewrite ? 650 : 200); ev.step = 1; renderHood();
+  await pause(450); ev.step = 2; renderHood();
+  await pause(250); ev.step = 3; renderHood();
+
+  const answer = intent ? intent.answer : NOT_IN_DOC;
+  const sources = intent ? intent.src.map(([p, j], i) => ({ n: i + 1, page: p, text: lib.pages[p - 1][1][j] })) : [];
+  const pieces = answer.match(/\S+\s*/g);
+  const failAt = state.config.failNext ? Math.min(5, pieces.length - 1) : -1;
+  for (let i = 0; i < pieces.length; i++) {
+    if (i === failAt) {
+      pending.error = "Model trenutno ne može da odgovori. Pokušaj ponovo.";
+      state.config.failNext = false; ev.failed = true; ev.step = 6; ev.deltas = i;
+      state.streaming = false; render(); renderHood();
+      return;
+    }
+    pending.text += pieces[i]; ev.deltas = i + 1;
+    updatePending(pending);
+    await pause(32);
+  }
+  ev.step = 4; renderHood();
+  const idx = conv.messages.indexOf(pending);
+  conv.messages[idx] = { id: newId("m"), role: "assistant", content: answer, sources, vote: null };
+  if (intent) conv.lastIntent = intent;
+  ev.done = true; ev.sources = sources; ev.step = 6;
+  state.streaming = false;
+  render(); renderHood();
+}
+
+function updatePending(pending) {
+  const list = document.getElementById("messages");
+  const nodes = list ? list.querySelectorAll(".answer-wrap") : [];
+  const node = nodes[nodes.length - 1];
+  if (!node) return;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = messageHtml(pending);
+  node.replaceWith(tmp.firstElementChild);
+  list.scrollTop = list.scrollHeight;
+}
+
+function vote(doc, conv, message, score) {
+  const next = message.vote === score ? 0 : score;
+  const c = conv.components;
+  for (const [kind, comp] of [["llm", c.llm], ["retriever", c.retriever], ["memory", c.memory]]) {
+    const t = state.tallies[kind][comp.name] || (state.tallies[kind][comp.name] = [0, 0]);
+    if (message.vote === 1) t[0]--; if (message.vote === -1) t[1]--;
+    if (next === 1) t[0]++; if (next === -1) t[1]++;
+  }
+  message.vote = next || null;
+  state.flashScore = [c.llm.name, c.retriever.name, c.memory.name];
+  hoodEvent({ type: "vote", score: next, llm: c.llm.label, retriever: c.retriever.label, memory: c.memory.label });
+  render();
+}
+
+// ---------------------------------------------------------------- scores
+function viewScores(main) {
+  const card = (kind) => {
+    const active = components(kind);
+    const w = weights(kind);
+    const names = [...active.map((c) => c.name), ...Object.keys(state.tallies[kind]).filter((n) => !active.some((c) => c.name === n)).sort()];
+    const rows = names.map((name) => {
+      const comp = describe(kind, name);
+      const [up, down] = state.tallies[kind][name] || [0, 0];
+      return { name, label: comp.label, inactive: !!comp.inactive, up, down, sat: up + down ? up / (up + down) : null, weight: comp.inactive ? 0 : w[name] };
+    });
+    const pct = (v) => (v == null ? "–" : `${Math.round(v * 100)}%`);
+    return `<section class="card score-card" aria-labelledby="t-${kind}"><h2 id="t-${kind}">${KIND_TITLE[kind]}</h2>
+      <div class="bars" aria-hidden="true">${rows.map((r) => `<div class="bar-row ${r.inactive ? "inactive" : ""}"><span class="lbl" title="${esc(r.label)}">${esc(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${((r.sat ?? 0) * 100).toFixed(1)}%"></div></div><span>${pct(r.sat)}</span></div>`).join("")}</div>
+      <table><thead><tr><th>Komponenta</th><th class="num">Za</th><th class="num">Protiv</th><th class="num">Zadovoljstvo</th><th class="num">Težina izbora</th></tr></thead>
+      <tbody>${rows.map((r) => `<tr class="${r.inactive ? "inactive" : ""} ${state.flashScore && state.flashScore.includes(r.name) ? "flash" : ""}"><td>${esc(r.label)}${r.inactive ? ' <span class="xs">(neaktivna)</span>' : ""}</td><td class="num">${r.up}</td><td class="num">${r.down}</td><td class="num">${pct(r.sat)}</td><td class="num">${pct(r.weight)}</td></tr>`).join("")}</tbody></table></section>`;
+  };
+  main.innerHTML = `<div class="page"><h1>Ocene</h1>
+    <p class="lead">Zadovoljstvo je udeo glasova „za“ među svim glasovima, od svih korisnika. Novi razgovor bira svaku komponentu nasumično, srazmerno zadovoljstvu; komponente bez glasova računaju se kao potpuno zadovoljavajuće, da bi i nove bile isprobane. Neaktivne komponente se više ne biraju.</p>
+    <div class="score-grid">${["llm", "retriever", "memory"].map(card).join("")}</div></div>`;
+  state.flashScore = null;
+}
+
+// ---------------------------------------------------------------- auth
+function viewAuth(main, signUp) {
+  main.innerHTML = `<div class="auth"><h1>${signUp ? "Registracija" : "Prijava"}</h1>
+    <form class="card" id="auth" novalidate>
+      <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="username" value="demo@primer.rs"></div>
+      <div class="field"><label for="password">Lozinka</label><input id="password" type="password" autocomplete="${signUp ? "new-password" : "current-password"}" value="${signUp ? "" : "demo-lozinka"}"></div>
+      ${signUp ? `<div class="field"><label for="password-again">Ponovite lozinku</label><input id="password-again" type="password" autocomplete="new-password"></div>` : ""}
+      <div id="auth-error"></div>
+      <button type="submit" class="btn-primary">${signUp ? "Registruj se" : "Prijavi se"}</button>
+      <p class="small muted" style="margin:0;text-align:center">${signUp ? 'Već imate nalog? <a href="#/prijava" style="color:var(--blue-700)">Prijava</a>' : 'Nemate nalog? <a href="#/registracija" style="color:var(--blue-700)">Registracija</a>'}</p>
+    </form><p class="xs muted" style="margin-top:1rem">U aplikaciji: bcrypt lozinka, sesija u httpOnly kolačiću (JWT); registracija se gasi sa <code>ALLOW_SIGNUP=false</code>.</p></div>`;
+  main.querySelector("#auth").onsubmit = (e) => {
+    e.preventDefault();
+    const email = main.querySelector("#email").value.trim();
+    const pw = main.querySelector("#password").value;
+    const again = main.querySelector("#password-again");
+    const error = !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? "Adresa e-pošte nije ispravna."
+      : pw.length < 8 ? "Lozinka mora imati bar 8 znakova."
+      : again && again.value !== pw ? "Lozinke se ne poklapaju." : "";
+    if (error) { main.querySelector("#auth-error").innerHTML = `<div class="alert" role="alert">${icon("warning")}<span>${error}</span></div>`; return; }
+    state.user = { email: email.toLowerCase() };
+    go("#/dokumenti");
+  };
+}
+
+// ================================================================= render loop
+function render() {
+  const r = route();
+  renderNav(r);
+  const main = document.getElementById("view");
+  if (r.name === "documents") viewDocuments(main);
+  else if (r.name === "upload") viewUpload(main);
+  else if (r.name === "doc") viewDoc(main, r.id);
+  else if (r.name === "scores") viewScores(main);
+  else viewAuth(main, r.name === "signup");
+  document.title = `${{ documents: "Dokumenti", upload: "Otpremi PDF", doc: "Dokument", scores: "Ocene", signin: "Prijava", signup: "Registracija" }[r.name]} · PDF asistent · demo`;
+}
+function measureBanner() { document.documentElement.style.setProperty("--banner-h", document.getElementById("banner").offsetHeight + "px"); }
+
+window.addEventListener("hashchange", () => { state.tab = "chat"; render(); });
+window.addEventListener("resize", measureBanner);
+document.getElementById("hood-toggle").onclick = () => { state.hood.open = !state.hood.open; renderHood(); };
+document.getElementById("hood-close").onclick = () => { state.hood.open = false; renderHood(); document.getElementById("hood-toggle").focus(); };
+document.getElementById("htab-flow").onclick = () => { state.hood.tab = "flow"; renderHood(); };
+document.getElementById("htab-settings").onclick = () => { state.hood.tab = "settings"; renderHood(); };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.hood.open) { state.hood.open = false; renderHood(); } });
+
+// ?view=doc&state=done and friends render a finished state, for screenshots and links.
+(async function start() {
+  const params = new URLSearchParams(location.search);
+  const ugovor = state.docs.find((d) => d.key === "ugovor");
+  if (params.get("state") === "done") {
+    const saved = { ...state.config };
+    const conv = newConversation(ugovor);
+    conv.components = { llm: components("llm")[0], retriever: components("retriever")[1], memory: components("memory")[0] };
+    state.hood.events = [];
+    await askInstant(ugovor, "Koliki je otkazni rok i kako se daje otkaz?");
+    await askInstant(ugovor, "A depozit?");
+    const answers = conv.messages.filter((m) => m.role === "assistant");
+    answers[0].vote = 1; state.tallies.llm[conv.components.llm.name][0]++; state.tallies.retriever.top_5[0]++; state.tallies.memory.all_history[0]++;
+    Object.assign(state.config, saved);
+  }
+  const view = params.get("view");
+  if (params.get("hood") === "1") state.hood.open = true;
+  if (params.get("tab") === "settings") state.hood.tab = "settings";
+  if (view === "doc") location.hash = `#/dokument/${ugovor.id}`;
+  else if (view === "scores") location.hash = "#/ocene";
+  else if (view === "upload") location.hash = "#/otpremi";
+  else if (!location.hash) location.hash = "#/dokumenti";
+  measureBanner();
+  render(); renderHood();
+  // On a wide screen the snapshot also shows the cited page; on a phone it stays on the chat.
+  if (view === "doc" && params.get("state") === "done" && matchMedia("(min-width: 1024px)").matches) setTimeout(() => showPage(3), 300);
+})();
+
+// The same turn without delays (snapshot states).
+async function askInstant(doc, q) {
+  FAST = true;
+  try { await ask(doc, q); } finally { FAST = false; }
+}
+</script>
+</body>
+</html>
