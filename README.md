@@ -1,5 +1,10 @@
 # pdf_assistant
 
+> **Status (2026-11-10): zamrznut kao demo.** Aplikacija radi i demo ostaje uživo, ali se ovde ne dodaju
+> nove funkcije. Sve što bi ovde bilo sledeće (skenovi i OCR, folderi, više dokumenata, zajednička baza
+> znanja) već postoji u [document-buddy](https://github.com/ManSe404/document-buddy), koji prelazi na
+> biblioteku Mosaic. Ispravke grešaka su i dalje dobrodošle.
+
 Razgovor sa jednim PDF-om. Korisnik otpremi PDF i postavlja pitanja, a odgovori
 navode stranu iz koje dolaze. PDF stoji pored razgovora i klik na izvor otvara tu
 stranu.
