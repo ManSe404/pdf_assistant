@@ -267,6 +267,12 @@ backend/bin/check.sh       # ruff, format, mypy --strict, pytest
 cd client && npm run check && npm run lint && npm test && npm run build
 ```
 
+Živa provera sa pravim provajderima (stek u Dockeru, jedan PDF, dva pitanja, citati):
+
+```bash
+backend/bin/e2e_live.sh [izvestaj.json]   # traži ključeve modela u .env; izveštaj ide van repoa
+```
+
 Backend testovi ne idu na mrežu:
 - modeli su skriptovani;
 - embedder radi po ključnim rečima;
