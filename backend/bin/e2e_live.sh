@@ -3,12 +3,13 @@
 # two questions with citations checked. Refuses to start without model keys in .env (ANTHROPIC_API_KEY
 # + OPENAI_API_KEY for the default setup, or a provider setup from the README).
 #
-#   backend/bin/e2e_live.sh [report.json]        # default report: /tmp/pdf-assistant-e2e-<date>.json
+#   backend/bin/e2e_live.sh [report.json]        # default report: backend/data/e2e/e2e-<date>.json (git-ignored)
 #
-# Exit 0 when the PDF is ready and both answers carry a citation. Nothing is written into the repo.
+# Exit 0 when the PDF is ready and both answers carry a citation. Nothing tracked by git is written.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-REPORT="${1:-/tmp/pdf-assistant-e2e-$(date +%Y%m%d-%H%M%S).json}"
+REPORT="${1:-backend/data/e2e/e2e-$(date +%Y%m%d-%H%M%S).json}"
+mkdir -p "$(dirname "$REPORT")"
 BASE="${E2E_BASE_URL:-http://localhost:8000}"
 [ -f .env ] || { echo "no .env next to docker-compose.yml: put the model keys there first"; exit 2; }
 grep -qE '^(ANTHROPIC_API_KEY|OPENAI_API_KEY|AZURE_OPENAI_API_KEY|ANTHROPIC_FOUNDRY_API_KEY|CHAT_PROVIDER)=' .env \
