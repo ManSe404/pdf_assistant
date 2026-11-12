@@ -1,12 +1,15 @@
 # pdf_assistant
 
+People with one long document, such as a contract or house rules, want answers from it that they can
+check against the page they come from. pdf_assistant lets them upload the PDF and ask: answers come
+only from the document's passages and cite their page, and clicking a source opens that page beside
+the conversation. The problem, the approach and its limits are in the
+[vision](docs/product/vision.md).
+
 > **Status: frozen as a demo.** The app works and the demo stays online, but no new features are
 > added here. Everything that would come next (scans and OCR, folders, several documents, a shared
 > knowledge base) already exists in [document-buddy](https://github.com/ManSe404/document-buddy),
 > which is moving to the Mosaic library. Bug fixes are still welcome.
-
-A conversation with one PDF. A user uploads a PDF and asks questions, and the answers cite the page
-they come from. The PDF sits beside the conversation, and clicking a source opens that page.
 
 The app is also a small experiment. Every conversation is given, at random, one language model, a
 number of passages to retrieve and an amount of history to send to the model. Users rate answers with
