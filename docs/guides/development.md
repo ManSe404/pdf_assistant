@@ -67,5 +67,5 @@ Starts the one-image stack with `docker compose up -d --build`, signs up a fresh
 small PDF built by the script, waits for it to be ready, and asks two questions (the second a
 follow-up). It exits 0 when the PDF is ready and both answers carry a citation. It refuses to start
 without model keys in `.env` next to `docker-compose.yml`, so it never makes a fake run, and writes
-its JSON report outside the repository unless a path is given. `E2E_BASE_URL` points it at another
+its JSON report to `backend/data/e2e/` (git-ignored, like the rest of `backend/data/`) unless a path is given. `E2E_BASE_URL` points it at another
 address.
