@@ -90,8 +90,8 @@ marks the rest open.
   (`chat/components.py`). No ADR.
 - **Grow this app with scans and OCR, folders, several documents and a shared knowledge base.** Not
   done here: these already exist in [document-buddy](https://github.com/ManSe404/document-buddy),
-  which is moving to the Mosaic library, so pdf_assistant is frozen as a demo ([Status](#status)). No
-  ADR.
+  which is moving to the Mosaic library, so pdf_assistant is frozen as a demo ([Status](#status),
+  [ADR 0002](../adr/0002-freeze-as-a-demo.md)).
 
 ## For whom
 
@@ -133,9 +133,10 @@ That it works as built:
   data out of another's reach. Which test covers what is in the
   [development guide](../guides/development.md#backend-tests).
 - `cd client && npm run check && npm run lint && npm test && npm run build` checks the client.
-- `backend/bin/e2e_live.sh` runs the Docker image against real model providers: one PDF, two
-  questions (the second a follow-up). It exits 0 when the PDF is ready and both answers carry a
-  citation, and refuses to start without model keys in `.env`.
+- `backend/bin/e2e_live.sh` is meant to run the Docker image against real model providers: one
+  PDF, two questions (the second a follow-up), passing when both answers carry a citation. As
+  written it cannot pass ([development guide](../guides/development.md#live-end-to-end-run)), and it
+  refuses to start without model keys in `.env`.
 - No CI is configured, so these run only when someone runs them.
 
 That it solves the problem:
@@ -143,39 +144,31 @@ That it solves the problem:
 - Users' satisfaction with the answers is measured inside the app: the "Scores" page
   (`GET /api/scores`) shows the votes and satisfaction of each model, passage count and history.
 - Open: whether a cited page really supports the answer is not measured. There is no evaluation set of
-  questions with expected pages, and `e2e_live.sh` checks only that a citation exists.
+  questions with expected pages, and `e2e_live.sh` is meant to check only that a citation exists.
 - Open: whether users find answers faster or more reliably than by reading the document is not
   measured.
 
 ## Status
 
-**Frozen as a demo.** The app works and the demo stays online, but no new features are added here.
-Everything that would come next (scans and OCR, folders, several documents, a shared knowledge base)
-already exists in [document-buddy](https://github.com/ManSe404/document-buddy), which is moving to the
-Mosaic library. Bug fixes are still welcome.
+**Frozen as a demo since 2026-11-10; no work planned** ([ADR 0002](../adr/0002-freeze-as-a-demo.md)).
+The app works, but no new features are added here. Everything that would come next (scans and OCR,
+folders, several documents, a shared knowledge base) already exists in
+[document-buddy](https://github.com/ManSe404/document-buddy), which is moving to the Mosaic library.
+Bug fixes are still welcome.
 
 ## What it has
 
-| Area | What exists |
-|---|---|
-| Accounts | Sign-up and sign-in (bcrypt, session in an httpOnly cookie), sign-out; sign-up is closed with `ALLOW_SIGNUP=false`. Every user sees only their own PDFs and conversations. |
-| PDFs | Upload up to 50 MB (`MAX_UPLOAD_MB`) with a progress bar, a check that the file is a PDF, processing in the background with a status (processing / ready / error), processing resumed after a restart, delete (file, vectors, conversations). |
-| Viewing | The PDF beside the conversation (pdf.js; pages are drawn only when they scroll into view), selectable text, a page counter; on a phone, Conversation and PDF tabs. |
-| Conversation | Several conversations per PDF (pick, new, delete), a title from the first question, a streamed answer, Markdown, sources `[n]` that lead to the page, a list of passages, follow-ups rewritten (`REWRITE_FOLLOWUPS`), "the document does not say" when there is no answer. |
-| Experiment | Model, passage count and history drawn per conversation, weighted by votes; a thumb up or down per answer (can be changed or withdrawn); the "Scores" page with satisfaction and the weight of each component; `EXPERIMENTS=false` turns it off. |
-| Models | Claude (API or Microsoft Foundry), OpenAI, Azure OpenAI / Foundry, Ollama; each model in `CHAT_MODELS` can have its own provider. Embeddings: OpenAI, Azure, Ollama. |
-| Search | Qdrant (embedded or a server) or Pinecone; chunks of 1000 characters with overlap, each remembering its page; a prompt budget (`MAX_PROMPT_TOKENS`). |
-| Tracing | Langfuse traces for a question and for processing a PDF (user = user, conversation = session), when the keys exist. |
-| Storage | Database: SQLite or Postgres. PDFs: disk or a private Supabase Storage bucket. Supabase works locally (`npx supabase start`) and in the cloud; the tables are closed to Supabase's public Data API. |
-| Operations | One process (API + processing + built client), SQLite and files in `data/` by default, Alembic migrations, a Docker image, OpenAPI at `/api/docs`. |
-
-How each works is in the [architecture overview](../architecture/overview.md).
+Every feature, what the user can do with it, its status and where it lives in the code is in the
+[feature catalogue](features/README.md). How each works is in the
+[architecture overview](../architecture/overview.md).
 
 ## The demo
 
-An [interactive demo](https://manse404.github.io/pdf_assistant/demo/) runs in the browser, without a
-server or keys, over invented documents and with pre-written answers. It looks like the real app and
-opens locally as `docs/demo/index.html`. In it you can:
+An interactive demo runs in the browser, without a server or keys, over invented documents and with
+pre-written answers. It is one self-contained file, `docs/demo/index.html`, that looks like the real
+app and works when opened from a clone. It is meant to be published with GitHub Pages at
+<https://manse404.github.io/pdf_assistant/demo/>; Pages is not turned on for the repository, so that
+address answers 404 for now. In it you can:
 
 - **ask about a contract** or house rules. The answer streams, and clicking `[1]` scrolls the PDF to that
   page and marks it;

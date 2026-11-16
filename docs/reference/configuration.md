@@ -5,6 +5,9 @@ Every default works for local development without any service running; only the 
 be set, or the providers switched to Ollama. Empty values are ignored. Lists are comma-separated.
 For Docker, the variables come from `.env` next to `docker-compose.yml`, which passes the settings
 below into the container except the ones marked "not in compose" and the two the Dockerfile sets.
+There is no `.env.example`; this page is the list. Settings are read once, when the app starts
+(`create_app()` in `backend/src/pdf_assistant/api/main.py`), and Alembic reads the same settings for
+`DATABASE_URL`.
 
 ## Application and accounts
 
@@ -16,7 +19,7 @@ below into the container except the ones marked "not in compose" and the two the
 | `ALLOW_SIGNUP` | `true` | `false` closes sign-up. |
 | `DATA_DIR` | `backend/data` | SQLite, uploaded PDFs, embedded Qdrant. Set to `/data` (a volume) by the Dockerfile. |
 | `DATABASE_URL` | SQLite in `DATA_DIR` | A SQLAlchemy URL. A `postgresql://…` URL (for example from Supabase) works as it is; the driver is psycopg 3. |
-| `MAX_UPLOAD_MB` | `50` | Not in compose. |
+| `MAX_UPLOAD_MB` | `50` | Not in compose. The client refuses files over 50 MB on its own (`client/src/lib/api/upload.ts`), whatever this is set to. |
 | `CLIENT_DIR` | `client/build` | The built web client served at `/`. Set to `/app/client` by the Dockerfile. |
 
 ## PDF storage

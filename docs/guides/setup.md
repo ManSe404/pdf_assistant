@@ -24,13 +24,14 @@ OPENAI_API_KEY=...        # embeddings
 ```bash
 backend/bin/init.sh                          # database (safe to run again)
 backend/bin/api.sh                           # API on http://127.0.0.1:8000, docs at /api/docs
-cd client && npm install && npm run dev      # client on http://127.0.0.1:5173
+cd client && npm install && npm run dev      # client on http://localhost:5173
 ```
 
 Vite proxies `/api` to `http://127.0.0.1:8000`; another port is set with
 `API_URL=http://127.0.0.1:8010 npm run dev` (and `PORT=8010 backend/bin/api.sh`). The first account
 is made on the sign-up page. When a key is missing, the API stops at start and the log names the
-variable to set.
+variable to set. Vite listens on `localhost` only, which can resolve to the IPv6 `::1` alone; open
+`http://localhost:5173` rather than `127.0.0.1:5173`.
 
 ## Docker
 
