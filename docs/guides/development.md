@@ -13,7 +13,9 @@ cd client && npm run check && npm run lint && npm test && npm run build
 `backend/bin/check.sh` is what CI would run; there is no CI configured. Ruff uses line length 120
 and the rule sets `E`, `F`, `W`, `I`, `B`, `UP`, `SIM`, `RUF`, `BLE`; mypy is strict with the pydantic
 plugin over `src` (`backend/pyproject.toml`). On the client, `check` is `svelte-check`, `lint` is
-Prettier and ESLint, `test` is Vitest over `src/**/*.test.ts`.
+Prettier and ESLint, `test` is Vitest over `src/**/*.test.ts`. The client commands need Node 24
+(`client/.nvmrc`). `npm run build` rewrites two tracked files under `client/build/`; restore them
+with `git checkout -- client/build` when the build was only a check.
 
 Other backend scripts: `backend/bin/test.sh` runs pytest with its arguments passed through
 (`backend/bin/test.sh tests/test_api_chat.py -k vote`); `backend/bin/init.sh` creates or upgrades the
@@ -65,7 +67,18 @@ backend/bin/e2e_live.sh [report.json]
 
 Starts the one-image stack with `docker compose up -d --build`, signs up a fresh user, uploads a
 small PDF built by the script, waits for it to be ready, and asks two questions (the second a
-follow-up). It exits 0 when the PDF is ready and both answers carry a citation. It refuses to start
-without model keys in `.env` next to `docker-compose.yml`, so it never makes a fake run, and writes
-its JSON report to `backend/data/e2e/` (git-ignored, like the rest of `backend/data/`) unless a path is given. `E2E_BASE_URL` points it at another
-address.
+follow-up). It is meant to exit 0 when the PDF is ready and both answers carry a citation. It
+refuses to start without model keys in `.env` next to `docker-compose.yml`, so it never makes a fake
+run, and writes its JSON report to `backend/data/e2e/` (git-ignored, like the rest of
+`backend/data/`) unless a path is given. `E2E_BASE_URL` points it at another address.
+
+**It cannot pass as written.** Its embedded Python client:
+
+- parses the answer stream as one JSON document, which fails on the second line, so the run stops
+  at the first question without writing a report;
+- reads citations from a `citations` field of the `end` event, which does not exist (the cited
+  passages are `message.sources`), so `ok` would be false even for answers that cite pages;
+- waits for the status `error`, which does not exist (a failed PDF is `failed`), so a failed PDF is
+  polled until the ten-minute deadline.
+
+Until the script is fixed, its failure says nothing about the app.

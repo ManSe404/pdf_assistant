@@ -10,7 +10,9 @@ the same parts as pictures; why it is built on FastAPI without LangChain is in
 One process serves everything: the API under `/api`, PDF indexing in a small thread pool, and the
 built web client at `/` (`backend/src/pdf_assistant/api/main.py`). By default it needs no service at
 all: SQLite, the uploaded PDFs and an embedded Qdrant live in `backend/data/`. Only the model keys
-have to be set, or the providers switched to Ollama.
+have to be set, or the providers switched to Ollama. In development the client runs on its own
+under Vite and forwards `/api` to the backend; the two parts are described in
+[backend](../reference/services/backend.md) and [client](../reference/services/client.md).
 
 | Part | Choices | Code |
 |---|---|---|
@@ -37,8 +39,9 @@ upload → PDF on disk or in Supabase Storage → text page by page (pypdfium2) 
   queued.
 - **Indexing** (`documents/indexing.py`) runs in a thread pool of `INDEX_WORKERS` (1) inside the API
   process. Pages are read with pypdfium2; chunks of `CHUNK_SIZE` (1000) characters overlap by about
-  `CHUNK_OVERLAP` (150), follow paragraphs, then lines, sentences and words, and remember the page
-  they start on (`documents/text.py`). Chunks are embedded in batches of `EMBED_BATCH_SIZE` (64).
+  `CHUNK_OVERLAP` (150) and follow paragraphs, then lines, sentences and words. Each page is chunked
+  on its own, so a chunk never crosses a page and carries the number of the page it comes from
+  (`documents/text.py`). Chunks are embedded in batches of `EMBED_BATCH_SIZE` (64).
   The PDF ends `ready`, or `failed` with a message its owner sees.
 - **A restart mid-run** leaves the PDF `processing`; at the next start every such PDF is queued
   again.
@@ -95,6 +98,11 @@ conversation starts, one component of each kind is drawn, weighted by votes:
 - **The "Scores" page** (`GET /api/scores`) shows each component's votes, satisfaction and current
   weight, including components no longer configured.
 - `EXPERIMENTS=false` turns it off: every conversation gets the first entry of each list.
+- **A component dropped from the settings.** A conversation keeps the components it was drawn with.
+  When one of them is no longer in `CHAT_MODELS`, `RETRIEVER_TOP_K` or `MEMORY_TURNS`, the
+  conversation is answered with the first configured component of that kind
+  (`Experiment.resolve`), but a vote on such an answer is still counted for the dropped component
+  (`chat/service.py`, `vote`), and the conversation still shows the dropped one's label.
 
 ## Accounts and access
 

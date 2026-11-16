@@ -1,8 +1,11 @@
 # Containers
 
-What runs and where data lives. One process serves the API, the indexing pool and the built client.
-Source: [architecture overview](../architecture/overview.md) and
-[codebase](../reference/codebase.md).
+What runs and where data lives, as in the Docker image: one process serves the API, the indexing
+pool and the built client. In development the web client is served by Vite instead and forwards
+`/api` to the API. The database and the PDF files sit inside the boundary in their default form
+(SQLite and a folder in `DATA_DIR`); with Postgres or Supabase Storage they move outside it. Source:
+[architecture overview](../architecture/overview.md), [backend](../reference/services/backend.md),
+[client](../reference/services/client.md) and [codebase](../reference/codebase.md).
 
 ```mermaid
 C4Container
@@ -29,10 +32,13 @@ C4Container
   Rel(api, files, "Saves, reads, deletes")
   Rel(api, indexer, "Queues uploaded PDFs")
   Rel(indexer, files, "Reads")
+  Rel(indexer, db, "Records status, pages and chunks")
   Rel(indexer, llm, "Embeds chunks")
   Rel(indexer, qdrant, "Stores chunks")
   Rel(indexer, ext_vectors, "Stores chunks, when configured")
   Rel(api, llm, "Rewrites follow-ups, embeds questions, streams answers")
-  Rel(api, qdrant, "Searches")
+  Rel(api, qdrant, "Searches; deletes a PDF's chunks")
+  Rel(api, ext_vectors, "Searches and deletes, when configured")
   Rel(api, langfuse, "Traces, when keys are set")
+  Rel(indexer, langfuse, "Traces, when keys are set")
 ```

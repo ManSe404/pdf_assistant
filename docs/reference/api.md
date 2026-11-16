@@ -22,7 +22,7 @@ in Serbian, for the client to show as they are. Every `/api/` response carries
 | `GET /api/pdfs/{pdf_id}/conversations` | signed in | | the PDF's conversations |
 | `POST /api/pdfs/{pdf_id}/conversations` | signed in | | 201 with a new conversation and the components drawn for it |
 | `DELETE /api/conversations/{conversation_id}` | signed in | | 204 |
-| `POST /api/conversations/{conversation_id}/messages` | signed in | `content`, the question, up to 4000 characters | a stream of newline-delimited JSON events, below |
+| `POST /api/conversations/{conversation_id}/messages` | signed in | `content`, the question, up to 4000 characters | a stream of newline-delimited JSON events, below; 409 while the PDF is not `ready`; 422 for a blank or too long question |
 | `PUT /api/messages/{message_id}/vote` | signed in | `score`: `1`, `-1`, or `0` to withdraw | the answer with its vote; 400 for a question |
 | `GET /api/scores` | signed in | | per kind (`llm`, `retriever`, `memory`), each component's `label`, `active`, `up`, `down`, `satisfaction` and `weight`, counted over all users |
 | `GET /{path}` | open | | the built client: a file under `CLIENT_DIR` when it exists, else `index.html`; 404 under `api/` and when the client is not built |
@@ -35,8 +35,10 @@ in Serbian, for the client to show as they are. Every `/api/` response carries
 {"type": "start", "user_message": Message, "title": ...}
 {"type": "delta", "text": "..."}            repeated
 {"type": "end", "message": Message}          the saved answer with its sources
-{"type": "error", "detail": "..."}          instead of "end"; nothing is saved
+{"type": "error", "detail": "..."}          instead of "end"; the answer is not saved
 ```
 
-The client reads it with `client/src/lib/api/ndjson.ts`; citations `[n]` in the answer point at the
-sources, each with its page.
+The question is saved before `start` is sent and stays when the answer fails or the client goes
+away; a question without an answer is left out of the history sent to the model. The client reads
+the stream with `client/src/lib/api/ndjson.ts`; citations `[n]` in the answer point at the
+`sources` of the saved message, each with its page.
